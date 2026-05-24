@@ -1,4 +1,76 @@
+ CodeMagic 构建配置文件
+# 仓库：vsdstzvn5b-lab/health-tracker
+
 workflows:
-git add: codemagic.yaml
-git commit: -m 'Add first workflow'
-git push:
+  android-workflow:
+    name: Android Build
+    instance_type: mac_mini_m1
+    environment:
+      # Flutter 版本
+      flutter: stable
+      # Android SDK
+      android: true
+      
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+          
+    scripts:
+      - name: 检查 Flutter 版本
+        script: flutter --version
+        
+      - name: 获取依赖包
+        script: flutter pub get
+        
+      - name: 构建 Android APK (Debug 版本)
+        script: flutter build apk --debug
+        
+      - name: 构建 Android APK (Release 版本)
+        script: flutter build apk --release
+        
+    artifacts:
+      - build/app/outputs/flutter-apk/app-debug.apk
+      - build/app/outputs/flutter-apk/app-release.apk
+      
+    publishing:
+      - app_center:
+``````yaml
+          display_name: 健康追踪
+          # 如果需要自动发布到应用中心，取消注释下面几行
+          # api_key: $APP_CENTER_API_KEY
+          # owner: vsdstzvn5b-lab
+          # app_name: health-tracker
+          
+  ios-workflow:
+    name: iOS Build (需要 Mac)
+    instance_type: mac_mini_m1
+    environment:
+      flutter: stable
+      xcode: latest
+      
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+          
+    scripts:
+      - name: 检查 Flutter 版本
+        script: flutter --version
+        
+      - name: 获取依赖包
+        script: flutter pub get
+        
+      - name: 构建 iOS (需要签名)
+        script: flutter build ios --release --no-codesign
+        
+    artifacts:
+      - build/**/ios/**/*.app
+      
+    publishing: []
+```
+
