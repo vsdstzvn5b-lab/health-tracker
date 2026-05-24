@@ -1,71 +1,40 @@
- CodeMagic 构建配置文件
-# 仓库：vsdstzvn5b-lab/health-tracker
-  android-workflow:
-    name: Android Build
-    instance_type: mac_mini_m1
+workflows:
+  native-android:
+    name: Native Android
+    max_build_duration: 120
+    instance_type: mac_mini_m2
     environment:
-      # Flutter 版本
-      flutter: stable
-      # Android SDK
-      android: true
-      
-    triggering:
-      events:
-        - push
-      branch_patterns:
-        - pattern: main
-          include: true
-          
+      android_signing:
+        - keystore_reference
+      groups:
+        - google_play
+      vars:
+        PACKAGE_NAME: "io.codemagic.androidquicksample"
     scripts:
-      - name: 检查 Flutter 版本
-        script: flutter --version
-        
-      - name: 获取依赖包
-        script: flutter pub get
-        
-      - name: 构建 Android APK (Debug 版本)
-        script: flutter build apk --debug
-        
-      - name: 构建 Android APK (Release 版本)
-        script: flutter build apk --release
-        
+      - name: Set Android SDK location
+        script: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/local.properties"
+      - name: Build Android release
+        script: |
+          LATEST_GOOGLE_PLAY_BUILD_NUMBER=$(google-play get-latest-build-number --package-name "$PACKAGE_NAME")
+          if [ -z LATEST_BUILD_NUMBER ]; then
+              # fallback in case no build number was found from google play. Alternatively, you can `exit 1` to fail the build
+              UPDATED_BUILD_NUMBER=$BUILD_NUMBER
+          else
+              UPDATED_BUILD_NUMBER=$(($LATEST_GOOGLE_PLAY_BUILD_NUMBER + 1))
+          fi
+          ./gradlew bundleRelease -PversionCode=$UPDATED_BUILD_NUMBER -PversionName=1.0.$UPDATED_BUILD_NUMBER
     artifacts:
-      - build/app/outputs/flutter-apk/app-debug.apk
-      - build/app/outputs/flutter-apk/app-release.apk
-      
+      - app/build/outputs/**/*.aab
     publishing:
-      - app_center:
-          display_name: 健康追踪
-          # 如果需要自动发布到应用中心，取消注释下面几行
-          # api_key: $APP_CENTER_API_KEY
-          # owner: vsdstzvn5b-lab
-          # app_name: health-tracker
-          
-  ios-workflow:
-    name: iOS Build (需要 Mac)
-    instance_type: mac_mini_m1
-    environment:
-      flutter: stable
-      xcode: latest
-      
-    triggering:
-      events:
-        - push
-      branch_patterns:
-        - pattern: main
-          include: true
-          
-    scripts:
-      - name: 检查 Flutter 版本
-        script: flutter --version
-        
-      - name: 获取依赖包
-        script: flutter pub get
-        
-      - name: 构建 iOS (需要签名)
-        script: flutter build ios --release --no-codesign
-        
-    artifacts:
-      - build/**/ios/**/*.app
-      
-    publishing: []
+      email:
+        recipients:
+          - user_1@example.com
+          - user_2@example.com
+        notify:
+          success: true
+          failure: false
+      google_play:
+        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+        track: internal
+        submit_as_draft: true
