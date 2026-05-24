@@ -1,0 +1,67 @@
+yaml
+name: Build Android APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v3
+      
+    - name: 设置 Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+      
+    - name: 设置 Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.16.9'
+        channel: 'stable'
+        
+    - name: 显示 Flutter 版本
+      run: flutter --version
+        
+    - name: 获取依赖
+      run: flutter pub get
+      
+    - name: 构建 APK (Debug)
+      run: flutter build apk --debug
+      
+    - name: 构建 APK (Release)
+      run: flutter build apk --release
+      env:
+        KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      
+    - name: 上传 Debug APK
+``````yaml
+      uses: actions/upload-artifact@v3
+      with:
+        name: app-debug
+        path: build/app/outputs/flutter-apk/app-debug.apk
+        
+    - name: 上传 Release APK
+      uses: actions/upload-artifact@v3
+      with:
+        name: app-release
+        path: build/app/outputs/flutter-apk/app-release.apk
+      
+    - name: 创建 Release（当有 tag 时）
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: |
+          build/app/outputs/flutter-apk/app-debug.apk
+          build/app/outputs/flutter-apk/app-release.apk
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
