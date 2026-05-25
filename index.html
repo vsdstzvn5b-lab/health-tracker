@@ -244,7 +244,6 @@ body {
   background: var(--surface2); border-radius: var(--radius-sm);
   height: 160px; padding: 16px; position: relative; overflow: hidden;
 }
-/* 关键：Canvas必须设置尺寸才能渲染 */
 .chart-canvas {
   width: 100%;
   height: 100%;
@@ -335,7 +334,6 @@ body {
   transform: scale(1) translateY(0);
   opacity: 1;
 }
-@keyframes achFadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 .achieve-popup {
   background: linear-gradient(135deg, #1A1A2E 0%, #16162A 50%, #12122A 100%);
@@ -438,6 +436,45 @@ body {
 .streak-dot.done .day-label {
   color: var(--accent2);
 }
+
+/* Stats date picker */
+.stats-date-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.stats-date-row label {
+  font-size: 13px;
+  color: var(--text2);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.stats-date-row input[type="date"] {
+  flex: 1;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px 12px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+}
+.stats-date-row input[type="date"]:focus {
+  border-color: var(--accent);
+}
+.stats-date-btn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
 </style>
 </head>
 <body>
@@ -532,6 +569,12 @@ body {
 
   <!-- PAGE: Stats -->
   <div class="page" id="pageStats">
+    <div class="stats-date-row">
+      <label>查看日期</label>
+      <input type="date" id="statsDatePicker" onchange="onStatsDateChange()">
+      <button class="stats-date-btn" onclick="goToTodayStats()">今天</button>
+    </div>
+    <div id="statsDetail" style="margin-bottom:16px;"></div>
     <div style="margin-bottom:16px;">
       <div style="font-size:13px;color:var(--text2);font-weight:600;margin-bottom:12px;">本周完成度</div>
       <div class="streak-bar" id="streakBar"></div>
@@ -639,8 +682,8 @@ body {
     <div class="nav-item" data-page="pageAchieve" onclick="switchPage('pageAchieve',this)">
       <span class="nav-item-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M6 9H4.5a2.5 2.5 0 0 0 0-5C7 4 7 7 7 7"/>
-          <path d="M18 9h1.5a2.5 2.5 0 0 1 0-5C17 4 17 7 17 7"/>
+          <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5C7 4 7 7 7 7"/>
+          <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5C17 4 17 7 17 7"/>
           <path d="M4 22h16"/>
           <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20 7 20"/>
           <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20 17 20"/>
@@ -766,7 +809,11 @@ body {
     <div class="sheet-handle"></div>
     <div class="sheet-title">记录体重</div>
     <div class="input-row">
-      <label>今日体重 (kg)</label>
+      <label>日期</label>
+      <input type="date" id="weightDateInput">
+    </div>
+    <div class="input-row">
+      <label>体重 (kg)</label>
       <input type="number" id="weightInput" placeholder="如：65.5" step="0.1">
     </div>
     <div style="margin-bottom:16px;">
@@ -827,15 +874,14 @@ function todayKey() {
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
 
-function getToday() {
+function getRecord(key) {
   var d = loadData();
-  var key = todayKey();
   if (!d.records[key]) d.records[key] = { foods:[], water:0, exercise:0, cal:0 };
   return d.records[key];
 }
-function saveToday(obj) {
+function saveRecord(key, obj) {
   var d = loadData();
-  d.records[todayKey()] = obj;
+  d.records[key] = obj;
   saveData(d);
 }
 
@@ -849,7 +895,8 @@ function escapeHtml(s) {
 // ===== Render Home =====
 function renderHome() {
   var d = loadData();
-  var t = getToday();
+  var key = todayKey();
+  var t = getRecord(key);
   var g = d.goals;
 
   if (d.height > 0 && d.weightLog.length > 0) {
@@ -885,7 +932,8 @@ function renderHome() {
 }
 
 function renderFoodList() {
-  var t = getToday();
+  var key = todayKey();
+  var t = getRecord(key);
   var box = document.getElementById('foodList');
   if (!t.foods || t.foods.length===0) {
     box.innerHTML = '<div class="food-empty"><div class="food-empty-icon">🍽️</div>还没有饮食记录<br>点击下方按钮添加</div>';
@@ -906,24 +954,26 @@ function renderFoodList() {
 
 // ===== Actions =====
 function addWater(amt) {
-  var t = getToday(); t.water = (t.water||0)+amt;
+  var key = todayKey();
+  var t = getRecord(key);
+  t.water = (t.water||0)+amt;
   t.cal = (t.foods||[]).reduce(function(s,f){ return s+f.cal; },0);
-  saveToday(t); renderHome(); showToast('+' + amt + 'ml 💧');
+  saveRecord(key, t); renderHome(); showToast('+' + amt + 'ml 💧');
 }
 function deleteFood(idx) {
-  var t = getToday(); t.foods.splice(idx,1);
+  var key = todayKey();
+  var t = getRecord(key);
+  t.foods.splice(idx,1);
   t.cal = t.foods.reduce(function(s,f){ return s+f.cal; },0);
-  saveToday(t); renderHome();
+  saveRecord(key, t); renderHome();
 }
-function addExercise(min, type, dateKey) {
-  var key = dateKey || todayKey();
-  var d = loadData();
-  if (!d.records[key]) d.records[key] = { foods:[], water:0, exercise:0, cal:0 };
-  d.records[key].exercise = (d.records[key].exercise||0) + min;
-  if (!d.records[key].exercises) d.records[key].exercises = [];
-  d.records[key].exercises.push({ type:type, min:min, date:new Date().toISOString() });
-  saveData(d);
-  if (key === todayKey()) { renderHome(); }
+function addExerciseToDate(key, min, type) {
+  var t = getRecord(key);
+  t.exercise = (t.exercise||0)+min;
+  if (!t.exercises) t.exercises = [];
+  t.exercises.push({ type:type, min:min, date:new Date().toISOString() });
+  saveRecord(key, t);
+  if (key === todayKey()) renderHome();
 }
 
 // ===== Food Sheet =====
@@ -931,10 +981,8 @@ function openFoodSheet() {
   document.getElementById('foodSearch').value = '';
   document.getElementById('foodNameInput').value = '';
   document.getElementById('foodCalInput').value = '';
-  // 默认日期为今天
-  var today = new Date();
-  var ds = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
-  document.getElementById('foodDateInput').value = ds;
+  // 默认今天
+  document.getElementById('foodDateInput').value = todayKey();
   renderFoodGrid('');
   document.getElementById('foodOverlay').classList.add('show');
 }
@@ -1005,23 +1053,21 @@ function confirmFood() {
   var date = document.getElementById('foodDateInput').value;
   if (!name || isNaN(cal)) { showToast('请填写完整信息'); return; }
   if (!date) { showToast('请选择日期'); return; }
-  var d = loadData();
-  if (!d.records[date]) d.records[date] = { foods:[], water:0, exercise:0, cal:0 };
-  if (!d.records[date].foods) d.records[date].foods = [];
-  d.records[date].foods.push({name:name, cal:cal});
-  d.records[date].cal = d.records[date].foods.reduce(function(s,f){ return s+f.cal; },0);
-  saveData(d);
-  hideSheet('foodOverlay'); renderHome(); showToast('已添加 ' + name);
+  var t = getRecord(date);
+  if (!t.foods) t.foods=[];
+  t.foods.push({name:name, cal:cal});
+  t.cal = t.foods.reduce(function(s,f){ return s+f.cal; },0);
+  saveRecord(date, t);
+  hideSheet('foodOverlay');
+  showToast('已添加 ' + name + ' → ' + date);
   if (date === todayKey()) { renderHome(); }
   var d2 = loadData();
-  if (d2.goals && d.records[date] && d.records[date].cal <= d2.goals.cal) unlockAchievement('cal_under');
+  if (d2.goals && t.cal <= d2.goals.cal) unlockAchievement('cal_under');
   unlockAchievement('first_food');
 }
 
 function openExerciseSheet() {
-  var today = new Date();
-  var ds = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
-  document.getElementById('exDateInput').value = ds;
+  document.getElementById('exDateInput').value = todayKey();
   document.getElementById('exOverlay').classList.add('show');
 }
 function confirmExercise() {
@@ -1030,8 +1076,8 @@ function confirmExercise() {
   var date = document.getElementById('exDateInput').value;
   if (!min || min<=0) { showToast('请输入运动时长'); return; }
   if (!date) { showToast('请选择日期'); return; }
-  addExercise(min, type, date);
-  hideSheet('exOverlay'); showToast('记录了 ' + min + ' 分钟 ' + type);
+  addExerciseToDate(date, min, type);
+  hideSheet('exOverlay'); showToast('记录了 ' + min + ' 分钟 ' + type + ' → ' + date);
   unlockAchievement('first_ex');
 }
 
@@ -1080,6 +1126,8 @@ function confirmProfile() {
 function openWeightSheet() {
   var d = loadData();
   document.getElementById('weightInput').value = '';
+  // 默认今天
+  document.getElementById('weightDateInput').value = todayKey();
   renderWeightHistory();
   document.getElementById('weightOverlay').classList.add('show');
 }
@@ -1096,17 +1144,17 @@ function renderWeightHistory() {
 }
 function confirmWeight() {
   var v = parseFloat(document.getElementById('weightInput').value);
+  var date = document.getElementById('weightDateInput').value;
   if (!v || v<=0) { showToast('请输入有效体重'); return; }
   var d = loadData();
   if (!d.weightLog) d.weightLog = [];
-  var today = todayKey();
   var existing = null;
-  for (var i = 0; i < d.weightLog.length; i++) { if (d.weightLog[i].date === today) { existing = d.weightLog[i]; break; } }
+  for (var i = 0; i < d.weightLog.length; i++) { if (d.weightLog[i].date === date) { existing = d.weightLog[i]; break; } }
   if (existing) existing.weight = v;
-  else d.weightLog.push({date:today, weight:v});
+  else d.weightLog.push({date:date, weight:v});
   saveData(d);
   hideSheet('weightOverlay'); renderHome(); renderSettings();
-  showToast('体重 ' + v + 'kg 已记录 ✓');
+  showToast('体重 ' + v + 'kg 已记录 ✓ ' + date);
   unlockAchievement('weight_down');
 }
 
@@ -1201,13 +1249,19 @@ function spawnParticles() {
 // ===== Stats =====
 function renderStats() {
   var d = loadData();
+  // 设置统计日期选择器为今天
+  var picker = document.getElementById('statsDatePicker');
+  picker.value = todayKey();
+  // 显示今天详情
+  showStatsForDate(todayKey());
+
   var keys = Object.keys(d.records).sort().slice(-14);
   var records = [];
   for (var i = 0; i < keys.length; i++) records.push(d.records[keys[i]]);
 
   renderStreak(d);
 
-  // 使用setTimeout确保Canvas已经完成布局
+  // 延迟确保Canvas布局完成
   setTimeout(function(){
     drawLineChart('chartCal', records.map(function(r){ return r.cal||0; }), '#FF6B6B');
     drawLineChart('chartWater', records.map(function(r){ return r.water||0; }), '#74B9FF');
@@ -1226,6 +1280,54 @@ function renderStats() {
     document.getElementById('avgWater').textContent = Math.round(recent.reduce(function(s,r){ return s+(r.water||0); },0)/recent.length);
     document.getElementById('avgEx').textContent = Math.round(recent.reduce(function(s,r){ return s+(r.exercise||0); },0)/recent.length);
   }
+}
+
+function onStatsDateChange() {
+  var date = document.getElementById('statsDatePicker').value;
+  if (date) showStatsForDate(date);
+}
+
+function goToTodayStats() {
+  var picker = document.getElementById('statsDatePicker');
+  picker.value = todayKey();
+  showStatsForDate(todayKey());
+}
+
+function showStatsForDate(dateKey) {
+  var d = loadData();
+  var r = d.records[dateKey];
+  var box = document.getElementById('statsDetail');
+  if (!r) {
+    box.innerHTML = '<div class="glass" style="padding:14px;font-size:13px;color:var(--text2);">'
+      + dateKey + ' 暂无记录'
+      + '</div>';
+    return;
+  }
+  var g = d.goals || {cal:2000, water:2000, ex:60};
+  var html = '<div class="glass" style="padding:14px;">'
+    + '<div style="font-size:13px;color:var(--text2);margin-bottom:10px;font-weight:600;">' + dateKey + ' 详情</div>'
+    + '<div style="display:flex;gap:12px;flex-wrap:wrap;">'
+    +   '<div style="flex:1;min-width:80px;text-align:center;padding:8px;background:var(--surface2);border-radius:12px;">'
+    +     '<div style="font-size:11px;color:var(--text2);">热量</div>'
+    +     '<div style="font-size:18px;font-weight:800;color:var(--red);">' + Math.round(r.cal||0) + '</div>'
+    +     '<div style="font-size:10px;color:var(--text2);">/' + g.cal + '</div>'
+    +   '</div>'
+    +   '<div style="flex:1;min-width:80px;text-align:center;padding:8px;background:var(--surface2);border-radius:12px;">'
+    +     '<div style="font-size:11px;color:var(--text2);">饮水</div>'
+    +     '<div style="font-size:18px;font-weight:800;color:var(--blue);">' + Math.round(r.water||0) + '</div>'
+    +     '<div style="font-size:10px;color:var(--text2);">/' + g.water + 'ml</div>'
+    +   '</div>'
+    +   '<div style="flex:1;min-width:80px;text-align:center;padding:8px;background:var(--surface2);border-radius:12px;">'
+    +     '<div style="font-size:11px;color:var(--text2);">运动</div>'
+    +     '<div style="font-size:18px;font-weight:800;color:var(--green);">' + Math.round(r.exercise||0) + '</div>'
+    +     '<div style="font-size:10px;color:var(--text2);">/' + g.ex + 'min</div>'
+    +   '</div>'
+    + '</div>';
+  if (r.foods && r.foods.length > 0) {
+    html += '<div style="margin-top:10px;font-size:12px;color:var(--text2);">饮食：' + r.foods.map(function(f){ return f.name; }).join('、') + '</div>';
+  }
+  html += '</div>';
+  box.innerHTML = html;
 }
 
 function renderStreak(d) {
@@ -1250,12 +1352,10 @@ function drawLineChart(canvasId, values, color) {
   if (!canvas) return;
   var ctx = canvas.getContext('2d');
 
-  // 获取容器实际尺寸
   var container = canvas.parentElement;
-  var w = container.clientWidth - 32; // 减去padding
+  var w = container.clientWidth - 32;
   var h = container.clientHeight - 32;
 
-  // 设置Canvas高清渲染
   var dpr = window.devicePixelRatio || 1;
   canvas.width = w * dpr;
   canvas.height = h * dpr;
@@ -1274,23 +1374,15 @@ function drawLineChart(canvasId, values, color) {
   }
 
   if (values.length<2) {
-    // 只有1个数据点：显示点 + 数值标签
+    // 只有1个数据点：显示点 + 数值
     var v = values[0];
     var max = v * 1.2 || 1;
-    var min = v * 0.8;
-    var range = max - min;
+    var min = v * 0.8 || 0;
+    var range = max - min || 1;
     var y = h - (v-min)/range*(h*0.8) - h*0.1;
-    // 画紫色点
     ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.arc(w/2, y, 4, 0, Math.PI*2);
-    ctx.fill();
-    // 白色中心点
-    ctx.fillStyle = '#fff';
-    ctx.beginPath();
-    ctx.arc(w/2, y, 2, 0, Math.PI*2);
-    ctx.fill();
-    // 数值标签
+    ctx.beginPath(); ctx.arc(w/2, y, 4, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(w/2, y, 2, 0, Math.PI*2); ctx.fill();
     ctx.fillStyle = color;
     ctx.font = 'bold 12px Inter';
     ctx.textAlign = 'center';
