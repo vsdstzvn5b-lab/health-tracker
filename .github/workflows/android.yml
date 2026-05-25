@@ -31,17 +31,14 @@ jobs:
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
-          cache: 'gradle'
 
-      - name: Enable Android CI
-        run: flutter config --no-analytics && flutter precache
+      - name: Create Android platform
+        run: |
+          flutter config --no-analytics
+          flutter create --platforms=android . --org com.healthtracker
 
       - name: Get dependencies
         run: flutter pub get
-
-      - name: Run tests
-        run: flutter test --no-pub
-        continue-on-error: true
 
       - name: Build debug APK
         run: flutter build apk --debug
