@@ -404,12 +404,9 @@ body {
 /* Streak bar styles for stats page */
 .streak-bar {
   display: flex;
-  gap: 4px;
+  gap: 8px;
   justify-content: space-between;
-  padding: 8px 4px;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scroll-snap-type: x mandatory;
+  padding: 0 4px;
 }
 .streak-dot {
   display: flex;
@@ -417,49 +414,67 @@ body {
   align-items: center;
   gap: 6px;
   flex: 1;
-  cursor: pointer;
-  scroll-snap-align: center;
-  min-width: 44px;
 }
 .streak-dot .dot {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: var(--surface2);
   border: 2px solid var(--border);
   transition: all 0.3s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text2);
-  user-select: none;
 }
 .streak-dot.done .dot {
   background: linear-gradient(135deg, var(--accent), var(--accent2));
   border-color: var(--accent);
   box-shadow: 0 0 12px rgba(108,92,231,0.4);
-  color: white;
-}
-.streak-dot.selected .dot {
-  border-color: var(--accent2);
-  box-shadow: 0 0 0 3px rgba(162,155,254,0.3);
-  transform: scale(1.15);
 }
 .streak-dot .day-label {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--text2);
   font-weight: 500;
 }
 .streak-dot.done .day-label {
   color: var(--accent2);
 }
-.streak-dot.selected .day-label {
-  color: var(--accent2);
-  font-weight: 700;
-}
 
+/* Stats date picker */
+.stats-date-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.stats-date-row label {
+  font-size: 13px;
+  color: var(--text2);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.stats-date-row input[type="date"] {
+  flex: 1;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px 12px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+}
+.stats-date-row input[type="date"]:focus {
+  border-color: var(--accent);
+}
+.stats-date-btn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
 </style>
 </head>
 <body>
@@ -554,8 +569,14 @@ body {
 
   <!-- PAGE: Stats -->
   <div class="page" id="pageStats">
+    <div class="stats-date-row">
+      <label>查看日期</label>
+      <input type="date" id="statsDatePicker" onchange="onStatsDateChange()">
+      <button class="stats-date-btn" onclick="goToTodayStats()">今天</button>
+    </div>
+    <div id="statsDetail" style="margin-bottom:16px;"></div>
     <div style="margin-bottom:16px;">
-      <div style="font-size:13px;color:var(--text2);font-weight:600;margin-bottom:12px;">本周记录</div>
+      <div style="font-size:13px;color:var(--text2);font-weight:600;margin-bottom:12px;">本周完成度</div>
       <div class="streak-bar" id="streakBar"></div>
     </div>
     <div class="glass stat-card">
@@ -587,7 +608,7 @@ body {
   <!-- PAGE: Achievements -->
   <div class="page" id="pageAchieve">
     <div style="font-size:20px;font-weight:800;margin-bottom:4px;">成就殿堂</div>
-    <div style="font-size:13px;color:var(--text2);margin-bottom:20px;">坚持记录,解锁成就!</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:20px;">坚持记录，解锁成就！</div>
     <div class="achieve-grid" id="achieveGrid"></div>
   </div>
 
@@ -700,7 +721,7 @@ body {
     <div class="food-grid" id="foodGrid"></div>
     <div class="input-row" id="foodNameRow">
       <label>食物名称</label>
-      <input type="text" id="foodNameInput" placeholder="输入食物名称,自动匹配热量" oninput="autoSearchFood()">
+      <input type="text" id="foodNameInput" placeholder="输入食物名称，自动匹配热量" oninput="autoSearchFood()">
       <div id="foodDropdown" class="food-dropdown"></div>
     </div>
     <div class="input-row">
@@ -738,7 +759,7 @@ body {
     </div>
     <div class="input-row">
       <label>运动时长 (分钟)</label>
-      <input type="number" id="exMinutes" placeholder="如:30">
+      <input type="number" id="exMinutes" placeholder="如：30">
     </div>
     <div style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.6;">
       连接智能设备功能将在 App 版本中支持<br>目前请手动输入运动时长
@@ -793,7 +814,7 @@ body {
     </div>
     <div class="input-row">
       <label>体重 (kg)</label>
-      <input type="number" id="weightInput" placeholder="如:65.5" step="0.1">
+      <input type="number" id="weightInput" placeholder="如：65.5" step="0.1">
     </div>
     <div style="margin-bottom:16px;">
       <div style="font-size:12px;color:var(--text2);margin-bottom:8px;">历史记录</div>
@@ -815,48 +836,14 @@ body {
     <div class="achieve-popup-name" id="achievePopupName"></div>
     <div class="achieve-popup-desc" id="achievePopupDesc"></div>
     <div style="margin-top:20px;opacity:0;animation:achFadeIn 0.4s ease-out 0.66s both;">
-      <button class="btn-primary" onclick="hideAchievementPopup()" style="width:100%;padding:12px;border:none;font-size:15px;">太棒了!</button>
+      <button class="btn-primary" onclick="hideAchievementPopup()" style="width:100%;padding:12px;border:none;font-size:15px;">太棒了！</button>
     </div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
-<script src="food-db.js">
-// 滑动手势：在 streak-bar 上左右滑动切换日期
-(function(){
-  var bar = document.getElementById('streakBar');
-  if (!bar) return;
-  var startX = 0;
-  bar.addEventListener('touchstart', function(e) { startX = e.touches[0].clientX; }, {passive:true});
-  bar.addEventListener('touchend', function(e) {
-    var dx = e.changedTouches[0].clientX - startX;
-    if (Math.abs(dx) < 30) return;
-    var d = loadData();
-    var keys = Object.keys(d.records).sort();
-    var idx = keys.indexOf(selectedDateKey);
-    if (dx > 0 && idx > 0) selectStreakDate(keys[idx-1]);
-    else if (dx < 0 && idx < keys.length-1) selectStreakDate(keys[idx+1]);
-  }, {passive:true});
-})();
-
-
-// 滑动手势：在 streak-bar 上左右滑动切换周
-(function(){
-  var bar = document.getElementById('streakBar');
-  if (!bar) return;
-  var touchStartX = 0;
-  bar.addEventListener('touchstart', function(e) { touchStartX = e.touches[0].clientX; }, {passive:true});
-  bar.addEventListener('touchend', function(e) {
-    var dx = e.changedTouches[0].clientX - touchStartX;
-    if (Math.abs(dx) < 40) return;
-    if (dx > 0) streakOffset = Math.max(0, streakOffset - 7);
-    else streakOffset += 7;
-    renderStreak(loadData());
-  }, {passive:true});
-})();
-
-</script>
+<script src="food-db.js"></script>
 <script>
 // ===== Achievement definitions =====
 var ACHIEVEMENTS = [
@@ -926,7 +913,7 @@ function renderHome() {
   document.getElementById('barCal').style.width = calPct+'%';
   document.getElementById('statusCal').textContent = ((t.cal||0)>g.cal)
     ? '超标 ' + Math.round((t.cal||0)-g.cal) + ' 千卡'
-    : '完成 ' + Math.round(calPct) + '%;';
+    : '完成 ' + Math.round(calPct) + '%；';
   document.getElementById('statusCal').style.color = ((t.cal||0)>g.cal) ? 'var(--orange)' : 'var(--text2)';
 
   var w = t.water||0;
@@ -939,7 +926,7 @@ function renderHome() {
   var exPct = Math.min((t.exercise||0)/g.ex*100, 100);
   document.getElementById('valEx').textContent = (t.exercise||0);
   document.getElementById('barEx').style.width = exPct+'%';
-  document.getElementById('statusEx').textContent = '完成 ' + Math.round(exPct) + '%;';
+  document.getElementById('statusEx').textContent = '完成 ' + Math.round(exPct) + '%；';
 
   renderFoodList();
 }
@@ -1029,7 +1016,7 @@ function autoSearchFood() {
   if (!window.FOOD_DB) { dd.classList.remove('show'); return; }
   var matches = window.FOOD_DB.filter(function(f){ return f.name.indexOf(q) !== -1; }).slice(0,8);
   if (matches.length === 0) {
-    dd.innerHTML = '<div class="food-dropdown-empty">未找到匹配食物,请手动输入热量</div>';
+    dd.innerHTML = '<div class="food-dropdown-empty">未找到匹配食物，请手动输入热量</div>';
     dd.classList.add('show');
     return;
   }
@@ -1102,7 +1089,7 @@ function openGoalSheet(type) {
   var labels = {cal:['热量目标','千卡',2000], water:['饮水目标','毫升',2000], ex:['运动目标','分钟',60]};
   document.getElementById('goalTitle').textContent = labels[type][0];
   document.getElementById('goalLabel').textContent = '目标 (' + labels[type][1] + ')';
-  document.getElementById('goalInput').placeholder = '当前:' + d.goals[type] + ' ' + labels[type][1];
+  document.getElementById('goalInput').placeholder = '当前：' + d.goals[type] + ' ' + labels[type][1];
   document.getElementById('goalInput').value = d.goals[type]||labels[type][2];
   document.getElementById('goalOverlay').classList.add('show');
 }
@@ -1261,14 +1248,20 @@ function spawnParticles() {
 
 // ===== Stats =====
 function renderStats() {
-  selectedDateKey = selectedDateKey || todayKey();
   var d = loadData();
+  // 设置统计日期选择器为今天
+  var picker = document.getElementById('statsDatePicker');
+  picker.value = todayKey();
+  // 显示今天详情
+  showStatsForDate(todayKey());
+
   var keys = Object.keys(d.records).sort().slice(-14);
   var records = [];
   for (var i = 0; i < keys.length; i++) records.push(d.records[keys[i]]);
 
   renderStreak(d);
 
+  // 延迟确保Canvas布局完成
   setTimeout(function(){
     drawLineChart('chartCal', records.map(function(r){ return r.cal||0; }), '#FF6B6B');
     drawLineChart('chartWater', records.map(function(r){ return r.water||0; }), '#74B9FF');
@@ -1289,141 +1282,69 @@ function renderStats() {
   }
 }
 
-var selectedDateKey = '';
+function onStatsDateChange() {
+  var date = document.getElementById('statsDatePicker').value;
+  if (date) showStatsForDate(date);
+}
 
-var selectedDateKey = '';
-var streakOffset = 0;
-var streakWeekStart = '';
+function goToTodayStats() {
+  var picker = document.getElementById('statsDatePicker');
+  picker.value = todayKey();
+  showStatsForDate(todayKey());
+}
+
+function showStatsForDate(dateKey) {
+  var d = loadData();
+  var r = d.records[dateKey];
+  var box = document.getElementById('statsDetail');
+  if (!r) {
+    box.innerHTML = '<div class="glass" style="padding:14px;font-size:13px;color:var(--text2);">'
+      + dateKey + ' 暂无记录'
+      + '</div>';
+    return;
+  }
+  var g = d.goals || {cal:2000, water:2000, ex:60};
+  var html = '<div class="glass" style="padding:14px;">'
+    + '<div style="font-size:13px;color:var(--text2);margin-bottom:10px;font-weight:600;">' + dateKey + ' 详情</div>'
+    + '<div style="display:flex;gap:12px;flex-wrap:wrap;">'
+    +   '<div style="flex:1;min-width:80px;text-align:center;padding:8px;background:var(--surface2);border-radius:12px;">'
+    +     '<div style="font-size:11px;color:var(--text2);">热量</div>'
+    +     '<div style="font-size:18px;font-weight:800;color:var(--red);">' + Math.round(r.cal||0) + '</div>'
+    +     '<div style="font-size:10px;color:var(--text2);">/' + g.cal + '</div>'
+    +   '</div>'
+    +   '<div style="flex:1;min-width:80px;text-align:center;padding:8px;background:var(--surface2);border-radius:12px;">'
+    +     '<div style="font-size:11px;color:var(--text2);">饮水</div>'
+    +     '<div style="font-size:18px;font-weight:800;color:var(--blue);">' + Math.round(r.water||0) + '</div>'
+    +     '<div style="font-size:10px;color:var(--text2);">/' + g.water + 'ml</div>'
+    +   '</div>'
+    +   '<div style="flex:1;min-width:80px;text-align:center;padding:8px;background:var(--surface2);border-radius:12px;">'
+    +     '<div style="font-size:11px;color:var(--text2);">运动</div>'
+    +     '<div style="font-size:18px;font-weight:800;color:var(--green);">' + Math.round(r.exercise||0) + '</div>'
+    +     '<div style="font-size:10px;color:var(--text2);">/' + g.ex + 'min</div>'
+    +   '</div>'
+    + '</div>';
+  if (r.foods && r.foods.length > 0) {
+    html += '<div style="margin-top:10px;font-size:12px;color:var(--text2);">饮食：' + r.foods.map(function(f){ return f.name; }).join('、') + '</div>';
+  }
+  html += '</div>';
+  box.innerHTML = html;
+}
 
 function renderStreak(d) {
   var bar = document.getElementById('streakBar');
+  var days = ['日','一','二','三','四','五','六'];
   var today = new Date();
-  today.setDate(today.getDate() - streakOffset);
-  var html2 = '';
-  var weekdays = ['日','一','二','三','四','五','六'];
-  var dates = [];
+  var html = '';
   for (var i = 6; i >= 0; i--) {
-    var d2 = new Date(today); d2.setDate(d2.getDate() - i);
+    var d2 = new Date(today); d2.setDate(d2.getDate()-i);
     var key = d2.getFullYear() + '-' + String(d2.getMonth()+1).padStart(2,'0') + '-' + String(d2.getDate()).padStart(2,'0');
-    dates.push(key);
     var hasData = d.records[key] && ((d.records[key].foods&&d.records[key].foods.length>0) || d.records[key].water>0 || d.records[key].exercise>0);
-    var isToday = (key === todayKey());
-    var isSelected = (key === selectedDateKey);
-    html2 += '<div class="streak-dot ' + (hasData?'done':'') + (isToday?' today':'') + (isSelected?' selected':'') + '" data-key="' + key + '">'
-      + '<div class="dot">' + d2.getDate() + '</div>'
-      + '<span class="day-label">周' + weekdays[d2.getDay()] + '</span>'
+    html += '<div class="streak-dot ' + (hasData?'done':'') + '">'
+      + '<div class="dot"></div>'
+      + '<span class="day-label">周' + days[d2.getDay()] + '</span>'
       + '</div>';
   }
-  bar.innerHTML = html2;
-  streakWeekStart = dates[0];
-  // 更新周范围提示
-  var weekLabel = document.getElementById('streakWeekLabel');
-  if (weekLabel) {
-    var endDate = dates[dates.length-1];
-    weekLabel.textContent = dates[0].substring(5) + ' ~ ' + endDate.substring(5);
-  }
-  // 事件委托
-  bar.onclick = function(e) {
-    var el = e.target.closest('.streak-dot');
-    if (el && el.dataset.key) selectStreakDate(el.dataset.key);
-  };
-}
-
-function selectStreakDate(key) {
-  selectedDateKey = key;
-  renderStreak(loadData());
-  showStatsForDate(key);
-}
-
-function showStatsForDate(dateKey) {
-  var d = loadData();
-  var r = d.records[dateKey];
-  var box = document.getElementById('statsDetail');
-  if (!box) {
-    box = document.createElement('div');
-    box.id = 'statsDetail';
-    box.style.marginBottom = '16px';
-    var bar2 = document.getElementById('streakBar');
-    bar2.parentNode.insertBefore(box, bar2.nextSibling);
-  }
-  if (!r) {
-    box.innerHTML = '<div class="glass" style="padding:14px;font-size:13px;color:var(--text2);">' + dateKey + ' 暂无记录，点击圆形可补记</div>';
-    return;
-  }
-  var g = d.goals || {cal:2000, water:2000, ex:60};
-  var h = '<div class="glass" style="padding:14px;">'
-    + '<div style="font-size:13px;color:var(--text2);margin-bottom:10px;font-weight:600;">' + dateKey + ' 详情</div>'
-    + '<div style="display:flex;gap:12px;flex-wrap:wrap;">'
-    +   '<div style="flex:1;min-width:80px;text-align:center;padding:8px;background:var(--surface2);border-radius:12px;">'
-    +     '<div style="font-size:11px;color:var(--text2);">热量</div>'
-    +     '<div style="font-size:18px;font-weight:800;color:var(--red);">' + Math.round(r.cal||0) + '</div>'
-    +     '<div style="font-size:10px;color:var(--text2);">/' + g.cal + '</div>'
-    +   '</div>'
-    +   '<div style="flex:1;min-width:80px;text-align:center;padding:8px;background:var(--surface2);border-radius:12px;">'
-    +     '<div style="font-size:11px;color:var(--text2);">饮水</div>'
-    +     '<div style="font-size:18px;font-weight:800;color:var(--blue);">' + Math.round(r.water||0) + '</div>'
-    +     '<div style="font-size:10px;color:var(--text2);">/' + g.water + 'ml</div>'
-    +   '</div>'
-    +   '<div style="flex:1;min-width:80px;text-align:center;padding:8px;background:var(--surface2);border-radius:12px;">'
-    +     '<div style="font-size:11px;color:var(--text2);">运动</div>'
-    +     '<div style="font-size:18px;font-weight:800;color:var(--green);">' + Math.round(r.exercise||0) + '</div>'
-    +     '<div style="font-size:10px;color:var(--text2);">/' + g.ex + 'min</div>'
-    +   '</div>'
-    + '</div>';
-  if (r.foods && r.foods.length > 0) {
-    h += '<div style="margin-top:10px;font-size:12px;color:var(--text2);">饮食：' + r.foods.map(function(f){ return f.name; }).join('、') + '</div>';
-  }
-  h += '</div>';
-  box.innerHTML = h;
-}
-
-
-function selectStreakDate(key) {
-  selectedDateKey = key;
-  renderStreak(loadData());
-  showStatsForDate(key);
-}
-
-function showStatsForDate(dateKey) {
-  var d = loadData();
-  var r = d.records[dateKey];
-  var box = document.getElementById('statsDetail');
-  if (!box) {
-    box = document.createElement('div');
-    box.id = 'statsDetail';
-    box.style.marginBottom = '16px';
-    var bar2 = document.getElementById('streakBar');
-    bar2.parentNode.insertBefore(box, bar2.nextSibling);
-  }
-  if (!r) {
-    box.innerHTML = '<div class="glass" style="padding:14px;font-size:13px;color:var(--text2);">' + dateKey + ' 暂无记录，点击圆形可补记</div>';
-    return;
-  }
-  var g = d.goals || {cal:2000, water:2000, ex:60};
-  var h = '<div class="glass" style="padding:14px;">'
-    + '<div style="font-size:13px;color:var(--text2);margin-bottom:10px;font-weight:600;">' + dateKey + ' 详情</div>'
-    + '<div style="display:flex;gap:12px;flex-wrap:wrap;">'
-    +   '<div style="flex:1;min-width:80px;text-align:center;padding:8px;background:var(--surface2);border-radius:12px;">'
-    +     '<div style="font-size:11px;color:var(--text2);">热量</div>'
-    +     '<div style="font-size:18px;font-weight:800;color:var(--red);">' + Math.round(r.cal||0) + '</div>'
-    +     '<div style="font-size:10px;color:var(--text2);">/' + g.cal + '</div>'
-    +   '</div>'
-    +   '<div style="flex:1;min-width:80px;text-align:center;padding:8px;background:var(--surface2);border-radius:12px;">'
-    +     '<div style="font-size:11px;color:var(--text2);">饮水</div>'
-    +     '<div style="font-size:18px;font-weight:800;color:var(--blue);">' + Math.round(r.water||0) + '</div>'
-    +     '<div style="font-size:10px;color:var(--text2);">/' + g.water + 'ml</div>'
-    +   '</div>'
-    +   '<div style="flex:1;min-width:80px;text-align:center;padding:8px;background:var(--surface2);border-radius:12px;">'
-    +     '<div style="font-size:11px;color:var(--text2);">运动</div>'
-    +     '<div style="font-size:18px;font-weight:800;color:var(--green);">' + Math.round(r.exercise||0) + '</div>'
-    +     '<div style="font-size:10px;color:var(--text2);">/' + g.ex + 'min</div>'
-    +   '</div>'
-    + '</div>';
-  if (r.foods && r.foods.length > 0) {
-    h += '<div style="margin-top:10px;font-size:12px;color:var(--text2);">饮食：' + r.foods.map(function(f){ return f.name; }).join('、') + '</div>';
-  }
-  h += '</div>';
-  box.innerHTML = h;
+  bar.innerHTML = html;
 }
 
 function drawLineChart(canvasId, values, color) {
@@ -1453,7 +1374,7 @@ function drawLineChart(canvasId, values, color) {
   }
 
   if (values.length<2) {
-    // 只有1个数据点:显示点 + 数值
+    // 只有1个数据点：显示点 + 数值
     var v = values[0];
     var max = v * 1.2 || 1;
     var min = v * 0.8 || 0;
