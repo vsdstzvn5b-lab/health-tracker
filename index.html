@@ -320,7 +320,28 @@ canvas.chart-canvas { width: 100% !important; height: 100% !important; }
 .weekly-row + .weekly-row { border-top: 1px solid var(--border); }
 .weekly-label { font-size: 13px; color: var(--text2); }
 .weekly-val { font-size: 14px; font-weight: 600; }
-</style>
+
+/* Food Dropdown */
+.food-dropdown {
+  position: absolute; top: 100%; left: 0; right: 0;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 0 0 14px 14px;
+  max-height: 220px; overflow-y: auto; z-index: 100; display: none;
+}
+.food-dropdown.show { display: block; }
+.food-dropdown-item {
+  padding: 10px 16px; cursor: pointer;
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+.food-dropdown-item:last-child { border-bottom: none; }
+.food-dropdown-item:hover { background: var(--surface3); }
+.food-dropdown-item-name { font-size: 14px; }
+.food-dropdown-item-cal { font-size: 13px; color: var(--red); font-weight: 600; }
+.food-dropdown-empty {
+  padding: 16px; text-align: center; font-size: 13px; color: var(--text2);
+}</style>
 </head>
 <body>
 <div class="phone" id="app">
@@ -497,16 +518,16 @@ canvas.chart-canvas { width: 100% !important; height: 100% !important; }
   <!-- Bottom Nav -->
   <div class="bottom-nav">
     <div class="nav-item active" data-page="pageHome" onclick="switchPage('pageHome',this)">
-      <span class="nav-item-icon">🏠</span>今日
+      <span class="nav-item-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>今日
     </div>
     <div class="nav-item" data-page="pageStats" onclick="switchPage('pageStats',this)">
-      <span class="nav-item-icon">📊</span>统计
+      <span class="nav-item-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>统计
     </div>
     <div class="nav-item" data-page="pageAchieve" onclick="switchPage('pageAchieve',this)">
-      <span class="nav-item-icon">🏆</span>成就
+      <span class="nav-item-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 000 5H6"/><path d="M18 9h1.5a2.5 2.5 0 010-5H18"/><path d="M4 22h16"/><path d="M8 22v-7a4 4 0 018 0v7"/></svg></span>成就
     </div>
     <div class="nav-item" data-page="pageSettings" onclick="switchPage('pageSettings',this)">
-      <span class="nav-item-icon">⚙️</span>设置
+      <span class="nav-item-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.4 1.82l.1.9a2 2 0 01-2.2 2.2l-.9-.1a1.65 1.65 0 00-1.82.4 2 2 0 01-1.22 1.38l-.4.1a2 2 0 01-2.4-1.22 1.65 1.65 0 00-1.82-.4l-.9.1a2 2 0 01-2.2-2.2l.1-.9a1.65 1.65 0 00.4-1.82 2 2 0 01.22-1.38l.4-.1a2 2 0 012.4-1.22z"/></svg></span>设置
     </div>
   </div>
 </div>
@@ -521,9 +542,10 @@ canvas.chart-canvas { width: 100% !important; height: 100% !important; }
       <input type="text" id="foodSearch" placeholder="搜索食物..." oninput="filterFood()">
     </div>
     <div class="food-grid" id="foodGrid"></div>
-    <div class="input-row">
+    <div class="input-row" id="foodNameRow">
       <label>食物名称</label>
-      <input type="text" id="foodNameInput" placeholder="或手动输入食物名称">
+      <input type="text" id="foodNameInput" placeholder="输入食物名称，自动匹配热量" oninput="autoSearchFood()">
+      <div id="foodDropdown" class="food-dropdown"></div>
     </div>
     <div class="input-row">
       <label>热量 (千卡)</label>
@@ -624,94 +646,7 @@ canvas.chart-canvas { width: 100% !important; height: 100% !important; }
 
 <script>
 // ============ FOOD DATABASE ============
-const FOOD_DB = [
-  // 主食
-  {name:"米饭（白米）",cal:116,unit:"100g"},
-  {name:"糙米饭",cal:111,unit:"100g"},
-  {name:"白面条",cal:286,unit:"100g"},
-  {name:"全麦面条",cal:255,unit:"100g"},
-  {name:"馒头",cal:223,unit:"100g"},
-  {name:"全麦面包",cal:246,unit:"100g"},
-  {name:"白面包",cal:266,unit:"100g"},
-  {name:"燕麦片",cal:367,unit:"100g"},
-  {name:"小米粥",cal:46,unit:"100g"},
-  {name:"饺子皮",cal:262,unit:"100g"},
-  // 肉类
-  {name:"鸡胸肉",cal:133,unit:"100g"},
-  {name:"鸡腿肉",cal:181,unit:"100g"},
-  {name:"鸡翅",cal:203,unit:"100g"},
-  {name:"牛肉（瘦）",cal:106,unit:"100g"},
-  {name:"牛肉（肥瘦）",cal:250,unit:"100g"},
-  {name:"猪里脊",cal:155,unit:"100g"},
-  {name:"猪五花",cal:395,unit:"100g"},
-  {name:"排骨",cal:278,unit:"100g"},
-  {name:"羊肉",cal:203,unit:"100g"},
-  {name:"鸭肉",cal:240,unit:"100g"},
-  // 海鲜
-  {name:"三文鱼",cal:139,unit:"100g"},
-  {name:"鲈鱼",cal:97,unit:"100g"},
-  {name:"虾",cal:87,unit:"100g"},
-  {name:"带鱼",cal:127,unit:"100g"},
-  {name:"鱿鱼",cal:75,unit:"100g"},
-  // 蛋奶
-  {name:"鸡蛋（全）",cal:143,unit:"100g"},
-  {name:"鸡蛋白",cal:52,unit:"100g"},
-  {name:"全脂牛奶",cal:66,unit:"100ml"},
-  {name:"脱脂牛奶",cal:34,unit:"100ml"},
-  {name:"酸奶（原味）",cal:72,unit:"100g"},
-  {name:"希腊酸奶",cal:97,unit:"100g"},
-  {name:"奶酪",cal:350,unit:"100g"},
-  {name:"黄油",cal:717,unit:"100g"},
-  // 蔬菜
-  {name:"西兰花",cal:34,unit:"100g"},
-  {name:"菠菜",cal:23,unit:"100g"},
-  {name:"生菜",cal:13,unit:"100g"},
-  {name:"番茄",cal:18,unit:"100g"},
-  {name:"黄瓜",cal:15,unit:"100g"},
-  {name:"胡萝卜",cal:37,unit:"100g"},
-  {name:"土豆",cal:76,unit:"100g"},
-  {name:"红薯",cal:86,unit:"100g"},
-  {name:"玉米",cal:112,unit:"100g"},
-  {name:"豆腐",cal:76,unit:"100g"},
-  {name:"蘑菇",cal:22,unit:"100g"},
-  // 水果
-  {name:"苹果",cal:52,unit:"100g"},
-  {name:"香蕉",cal:89,unit:"100g"},
-  {name:"橙子",cal:47,unit:"100g"},
-  {name:"葡萄",cal:69,unit:"100g"},
-  {name:"西瓜",cal:30,unit:"100g"},
-  {name:"草莓",cal:32,unit:"100g"},
-  {name:"蓝莓",cal:57,unit:"100g"},
-  {name:"芒果",cal:60,unit:"100g"},
-  {name:"桃子",cal:39,unit:"100g"},
-  {name:"梨",cal:57,unit:"100g"},
-  {name:"猕猴桃",cal:61,unit:"100g"},
-  {name:"樱桃",cal:50,unit:"100g"},
-  // 零食/饮料
-  {name:"薯片",cal:536,unit:"100g"},
-  {name:"巧克力",cal:546,unit:"100g"},
-  {name:"饼干",cal:433,unit:"100g"},
-  {name:"蛋糕",cal:348,unit:"100g"},
-  {name:"冰淇淋",cal:127,unit:"100g"},
-  {name:"可乐",cal:42,unit:"100ml"},
-  {name:"橙汁",cal:45,unit:"100ml"},
-  {name:"啤酒",cal:43,unit:"100ml"},
-  {name:"红酒",cal:83,unit:"100ml"},
-  {name:"拿铁咖啡",cal:42,unit:"100ml"},
-  {name:"珍珠奶茶",cal:52,unit:"100ml"},
-  // 坚果
-  {name:"核桃",cal:654,unit:"100g"},
-  {name:"腰果",cal:553,unit:"100g"},
-  {name:"杏仁",cal:579,unit:"100g"},
-  {name:"花生",cal:567,unit:"100g"},
-  // 食用油
-  {name:"橄榄油",cal:884,unit:"100ml"},
-  {name:"花生油",cal:884,unit:"100ml"},
-  // 调味品
-  {name:"白砂糖",cal:400,unit:"100g"},
-  {name:"蜂蜜",cal:304,unit:"100g"},
-  {name:"酱油",cal:53,unit:"100ml"},
-];
+// FOOD_DB loaded from food-db.js
 
 // ============ ACHIEVEMENTS ============
 const ACHIEVEMENTS = [
@@ -1130,7 +1065,7 @@ function switchPage(pageId, el) {
   if (pageId==='pageSettings') renderSettings();
 }
 
-function hideSheet(id) { document.getElementById(id).classList.remove('show'); }
+function hideSheet(id) { document.getElementById(id).classList.remove('show'); var dd=document.getElementById('foodDropdown'); if(dd)dd.classList.remove('show'); }
 
 // ============ TOAST ============
 function showToast(msg) {
@@ -1151,6 +1086,38 @@ function showToast(msg) {
     navigator.serviceWorker.register('/sw.js').catch(()=>{});
   }
 })();
+</script>
+  <script src="food-db.js">
+// ---- 输入名称自动匹配热量 ----
+function autoSearchFood() {
+  const q = (document.getElementById('foodNameInput')||{}).value.trim();
+  const dd = document.getElementById('foodDropdown');
+  if (!dd) return;
+  if (!q) { dd.classList.remove('show'); return; }
+  const matches = (window.FOOD_DB||[]).filter(f => f.name.indexOf(q) !== -1).slice(0, 8);
+  if (matches.length === 0) {
+    dd.innerHTML = '<div class="food-dropdown-empty">未找到匹配食物，请手动输入热量</div>';
+    dd.classList.add('show');
+    return;
+  }
+  dd.innerHTML = matches.map(f => {
+    const safe = f.name.replace(/'/g, '\\'  ');
+    return '<div class="food-dropdown-item" onclick="selectFoodFromDropdown('' + safe + '\', ' + f.cal + ')' + ''  '>' +
+      '<span class="food-dropdown-item-name">' + f.name + '</span>' +
+      '<span class="food-dropdown-item-cal">' + Math.round(f.cal) + ' 千卡</span>' +
+      '</div>';
+  }).join('');
+  dd.classList.add('show');
+}
+
+function selectFoodFromDropdown(name, cal) {
+  const n = document.getElementById('foodNameInput');
+  const c = document.getElementById('foodCalInput');
+  if (n) n.value = name;
+  if (c) c.value = cal;
+  const dd = document.getElementById('foodDropdown');
+  if (dd) dd.classList.remove('show');
+}
 </script>
 </body>
 </html>
