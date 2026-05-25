@@ -840,6 +840,22 @@ body {
   }, {passive:true});
 })();
 
+
+// 滑动手势：在 streak-bar 上左右滑动切换周
+(function(){
+  var bar = document.getElementById('streakBar');
+  if (!bar) return;
+  var touchStartX = 0;
+  bar.addEventListener('touchstart', function(e) { touchStartX = e.touches[0].clientX; }, {passive:true});
+  bar.addEventListener('touchend', function(e) {
+    var dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) < 40) return;
+    if (dx > 0) streakOffset = Math.max(0, streakOffset - 7);
+    else streakOffset += 7;
+    renderStreak(loadData());
+  }, {passive:true});
+})();
+
 </script>
 <script>
 // ===== Achievement definitions =====
@@ -1275,29 +1291,92 @@ function renderStats() {
 
 var selectedDateKey = '';
 
+var selectedDateKey = '';
+var streakOffset = 0;
+var streakWeekStart = '';
+
 function renderStreak(d) {
   var bar = document.getElementById('streakBar');
   var today = new Date();
+  today.setDate(today.getDate() - streakOffset);
   var html2 = '';
   var weekdays = ['日','一','二','三','四','五','六'];
+  var dates = [];
   for (var i = 6; i >= 0; i--) {
-    var d2 = new Date(today); d2.setDate(d2.getDate()-i);
+    var d2 = new Date(today); d2.setDate(d2.getDate() - i);
     var key = d2.getFullYear() + '-' + String(d2.getMonth()+1).padStart(2,'0') + '-' + String(d2.getDate()).padStart(2,'0');
+    dates.push(key);
     var hasData = d.records[key] && ((d.records[key].foods&&d.records[key].foods.length>0) || d.records[key].water>0 || d.records[key].exercise>0);
-    var isToday = (i === 0);
+    var isToday = (key === todayKey());
     var isSelected = (key === selectedDateKey);
-    html2 += '<div class="streak-dot ' + (hasData?'done':'') + (isToday?' today':'') + (isSelected?' selected':'') + '" data-key="' + key + '">' 
+    html2 += '<div class="streak-dot ' + (hasData?'done':'') + (isToday?' today':'') + (isSelected?' selected':'') + '" data-key="' + key + '">'
       + '<div class="dot">' + d2.getDate() + '</div>'
       + '<span class="day-label">周' + weekdays[d2.getDay()] + '</span>'
       + '</div>';
   }
   bar.innerHTML = html2;
+  streakWeekStart = dates[0];
+  // 更新周范围提示
+  var weekLabel = document.getElementById('streakWeekLabel');
+  if (weekLabel) {
+    var endDate = dates[dates.length-1];
+    weekLabel.textContent = dates[0].substring(5) + ' ~ ' + endDate.substring(5);
+  }
   // 事件委托
   bar.onclick = function(e) {
     var el = e.target.closest('.streak-dot');
     if (el && el.dataset.key) selectStreakDate(el.dataset.key);
   };
 }
+
+function selectStreakDate(key) {
+  selectedDateKey = key;
+  renderStreak(loadData());
+  showStatsForDate(key);
+}
+
+function showStatsForDate(dateKey) {
+  var d = loadData();
+  var r = d.records[dateKey];
+  var box = document.getElementById('statsDetail');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'statsDetail';
+    box.style.marginBottom = '16px';
+    var bar2 = document.getElementById('streakBar');
+    bar2.parentNode.insertBefore(box, bar2.nextSibling);
+  }
+  if (!r) {
+    box.innerHTML = '<div class="glass" style="padding:14px;font-size:13px;color:var(--text2);">' + dateKey + ' 暂无记录，点击圆形可补记</div>';
+    return;
+  }
+  var g = d.goals || {cal:2000, water:2000, ex:60};
+  var h = '<div class="glass" style="padding:14px;">'
+    + '<div style="font-size:13px;color:var(--text2);margin-bottom:10px;font-weight:600;">' + dateKey + ' 详情</div>'
+    + '<div style="display:flex;gap:12px;flex-wrap:wrap;">'
+    +   '<div style="flex:1;min-width:80px;text-align:center;padding:8px;background:var(--surface2);border-radius:12px;">'
+    +     '<div style="font-size:11px;color:var(--text2);">热量</div>'
+    +     '<div style="font-size:18px;font-weight:800;color:var(--red);">' + Math.round(r.cal||0) + '</div>'
+    +     '<div style="font-size:10px;color:var(--text2);">/' + g.cal + '</div>'
+    +   '</div>'
+    +   '<div style="flex:1;min-width:80px;text-align:center;padding:8px;background:var(--surface2);border-radius:12px;">'
+    +     '<div style="font-size:11px;color:var(--text2);">饮水</div>'
+    +     '<div style="font-size:18px;font-weight:800;color:var(--blue);">' + Math.round(r.water||0) + '</div>'
+    +     '<div style="font-size:10px;color:var(--text2);">/' + g.water + 'ml</div>'
+    +   '</div>'
+    +   '<div style="flex:1;min-width:80px;text-align:center;padding:8px;background:var(--surface2);border-radius:12px;">'
+    +     '<div style="font-size:11px;color:var(--text2);">运动</div>'
+    +     '<div style="font-size:18px;font-weight:800;color:var(--green);">' + Math.round(r.exercise||0) + '</div>'
+    +     '<div style="font-size:10px;color:var(--text2);">/' + g.ex + 'min</div>'
+    +   '</div>'
+    + '</div>';
+  if (r.foods && r.foods.length > 0) {
+    h += '<div style="margin-top:10px;font-size:12px;color:var(--text2);">饮食：' + r.foods.map(function(f){ return f.name; }).join('、') + '</div>';
+  }
+  h += '</div>';
+  box.innerHTML = h;
+}
+
 
 function selectStreakDate(key) {
   selectedDateKey = key;
