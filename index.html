@@ -260,6 +260,24 @@ body {
   opacity: 0.4; transition: all 0.3s;
 }
 .achieve-item.unlocked { opacity: 1; border-color: var(--accent); }
+
+.achieve-detail {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+  font-size: 12px;
+  color: var(--accent2);
+  padding: 0 4px;
+}
+.achieve-detail.open {
+  max-height: 60px;
+  padding: 6px 4px 0;
+}
+.achieve-date-label {
+  font-size: 10px;
+  color: var(--accent2);
+  margin-top: 4px;
+}
 .achieve-icon { font-size: 32px; margin-bottom: 8px; }
 .achieve-name { font-size: 12px; font-weight: 600; }
 .achieve-desc { font-size: 10px; color: var(--text2); margin-top: 4px; }
@@ -332,17 +350,13 @@ body {
 }
 
 .achieve-popup-icon {
-  font-size: 56px; position: relative; z-index: 1;
+  font-size: 36px; position: relative; z-index: 1;
   display: flex; align-items: center; justify-content: center;
-  width: 80px; height: 80px; margin: 0 auto;
+  width: 64px; height: 64px; margin: 0 auto;
   background: linear-gradient(135deg, var(--accent), var(--accent2));
   border-radius: 50%;
   box-shadow: 0 4px 20px rgba(108,92,231,0.5);
   animation: achBounce 0.6s ease-out 0.15s both;
-}
-.achieve-popup-icon svg {
-  width: 44px; height: 44px;
-  fill: white;
 }
 @keyframes achBounce {
   0%   { transform: scale(0) rotate(-15deg); }
@@ -693,26 +707,16 @@ body {
 // ===== Achievement definitions =====
 // Icons are SVG strings
 var ACHIEVEMENTS = [
-  {id:'first_food',  name:'初来乍到', desc:'第一次记录饮食',
-   icon:'<svg viewBox="0 0 24 24"><path d="M8.1 13.3c0 1.2-.6 2.3-1.6 3.2-.9.8-2.1 1.2-3.5 1.2s-2.6-.4-3.5-1.2C-.9 15.6-1.5 14.5-1.5 13.3h2.7c0 .7.3 1.3.8 1.8.5.5 1.2.7 2 .7s1.5-.2 2-.7c.5-.5.8-1.1.8-1.8H8.1zM18 2l-5 9h11L18 2zM3.5 17.3c1.4 0 2.6.4 3.5 1.2.9.8 1.4 1.9 1.4 3.2h-2.7c0-.7-.3-1.3-.8-1.8s-1.2-.7-2-.7-1.5.2-2 .7c-.5.5-.8 1.1-.8 1.8H0c0-1.2.6-2.3 1.6-3.2.9-.8 2.1-1.2 3.5-1.2zM18 17l-2.8 5.5L12.5 17h-2l3.5 7 4.5-7h-2z"/></svg>'},
-  {id:'first_ex',    name:'动起来',   desc:'第一次记录运动',
-   icon:'<svg viewBox="0 0 24 24"><path d="M13.5 5.5c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zM9.8 8.9L7 23h2.1l1.8-8 2.9 2.5c.7.6 1.8.5 2.4-.2l1.1-1.4c.5-.7.4-1.7-.3-2.2L13.5 10 9.8 8.9zM6.1 22.9c.7 1.2 2.1 1.7 3.3 1l.7-.4c1.2-.7 1.7-2.1 1-3.3l-.7-1.2c-.7-1.2-2.1-1.7-3.3-1l-.7.4c-1.2.7-1.7 2.1-1 3.3l.7 1.2zM6.1 12.9c.7 1.2 2.1 1.7 3.3 1l.7-.4c1.2-.7 1.7-2.1 1-3.3l-.7-1.2c-.7-1.2-2.1-1.7-3.3-1l-.7.4c-1.2.7-1.7 2.1-1 3.3l.7 1.2z"/></svg>'},
-  {id:'water_2l',   name:'水足饭饱', desc:'单日饮水达到2L',
-   icon:'<svg viewBox="0 0 24 24"><path d="M12 2c-5.3 0-8 3.8-8 7.5 0 4.8 3.9 8.5 8 12.5 4.1-4 8-7.7 8-12.5C20 5.8 17.3 2 12 2zM12 7c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z"/></svg>'},
-  {id:'cal_under',   name:'热量控制', desc:'单日热量不超目标',
-   icon:'<svg viewBox="0 0 24 24"><path d="M13.5 0.7c-1.2 1.7-1.5 3.8-1.5 5.3 0 2.3 1.9 4.2 4.2 4.2.7 0 1.5-.2 2.2-.5C21.2 6.6 19.5 1.9 13.5.7zM5.2 22.5c1.4-1.4 3.4-1.4 4.8 0 .5.5.7 1.1.7 1.8s-.2 1.3-.7 1.8c-1.4 1.4-3.4 1.4-4.8 0-.5-.5-.7-1.1-.7-1.8s.2-1.3.7-1.8zM12 6.5c-3.3 0-6 2.7-6 6 0 3.3 2.7 6 6 6s6-2.7 6-6c0-3.3-2.7-6-6-6z"/></svg>'},
-  {id:'streak_3',   name:'三天的坚持', desc:'连续记录3天',
-   icon:'<svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/></svg>'},
-  {id:'streak_7',   name:'一周达人', desc:'连续记录7天',
-   icon:'<svg viewBox="0 0 24 24"><path d="M19 5h-2V3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V7h-2V5zm0 12H5V7h14v10z"/><path d="M5 7h14v10H5z" fill="gold" opacity=".3"/><path d="M12 10l-2 4h4l-2-4z"/></svg>'},
-  {id:'streak_30',  name:'月度冠军', desc:'连续记录30天',
-   icon:'<svg viewBox="0 0 24 24"><path d="M19 5h-2V3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V7h-2V5zm0 12H5V7h14v10z"/><circle cx="12" cy="12" r="4" fill="gold"/><path d="M9 12l2 2 4-4" stroke="white" stroke-width="2" fill="none"/></svg>'},
-  {id:'log_50',     name:'记录达人', desc:'累计记录50条饮食',
-   icon:'<svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zM6 20V4h5v7h7v9H6z"/></svg>'},
-  {id:'weight_down',name:'初见成效', desc:'体重下降第一次',
-   icon:'<svg viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-2 15l-5-5 1.4-1.4L10 14.2l7.6-7.6L19 8l-9 9z"/></svg>'},
-  {id:'bmi',        name:'健康达标', desc:'BMI进入正常范围',
-   icon:'<svg viewBox="0 0 24 24"><path d="M12 2l3.1 6.3L22 9.4l-5 4.9.9 6.4L12 17.8l-5.9 3.9.9-6.4-5-4.9 6.9-1.1L12 2z"/></svg>'}
+  {id:'first_food', name:'初来乍到', desc:'第一次记录饮食', icon:'🍽️'},
+  {id:'first_ex', name:'动起来', desc:'第一次记录运动', icon:'🏃'},
+  {id:'water_2l', name:'水足饭饱', desc:'单日饮水达到2L', icon:'💧'},
+  {id:'cal_under', name:'热量控制', desc:'单日热量不超目标', icon:'🔥'},
+  {id:'streak_3', name:'三天的坚持', desc:'连续记录3天', icon:'📅'},
+  {id:'streak_7', name:'一周达人', desc:'连续记录7天', icon:'🏆'},
+  {id:'streak_30', name:'月度冠军', desc:'连续记录30天', icon:'🏆'},
+  {id:'log_50', name:'记录达人', desc:'累计记录50条饮食', icon:'📝'},
+  {id:'weight_down', name:'初见成效', desc:'体重下降第一次', icon:'⚖️'},
+  {id:'bmi', name:'健康达标', desc:'BMI进入正常范围', icon:'💪'}
 ];
 
 // ===== Data Layer =====
@@ -994,11 +998,26 @@ function confirmWeight() {
 function unlockAchievement(id) {
   var d = loadData();
   if (!d.achievements) d.achievements = [];
-  for (var i = 0; i < d.achievements.length; i++) { if (d.achievements[i] === id) return; }
-  d.achievements.push(id); saveData(d);
+  // 兼容旧数据：支持字符串和对象两种格式
+  for (var i = 0; i < d.achievements.length; i++) {
+    if (typeof d.achievements[i] === 'string' && d.achievements[i] === id) return;
+    if (typeof d.achievements[i] === 'object' && d.achievements[i].id === id) return;
+  }
+  d.achievements.push({id: id, date: todayKey()});
+  saveData(d);
   var a = null;
   for (var i = 0; i < ACHIEVEMENTS.length; i++) { if (ACHIEVEMENTS[i].id === id) { a = ACHIEVEMENTS[i]; break; } }
   if (a) showAchievementPopup(a);
+}
+
+function toggleAchieveDetail(id) {
+  var el = document.getElementById('achDetail-' + id);
+  if (!el) return;
+  var isOpen = el.classList.contains('open');
+  // 先关闭所有已展开的
+  var allDetails = document.querySelectorAll('.achieve-detail.open');
+  for (var i = 0; i < allDetails.length; i++) allDetails[i].classList.remove('open');
+  if (!isOpen) el.classList.add('open');
 }
 
 function showAchievementPopup(a) {
@@ -1189,13 +1208,28 @@ function renderAchievements() {
   for (var i = 0; i < ACHIEVEMENTS.length; i++) {
     var a = ACHIEVEMENTS[i];
     var unlocked = false;
-    if (d.achievements) { for (var j = 0; j < d.achievements.length; j++) { if (d.achievements[j] === a.id) { unlocked = true; break; } } }
+    var achDate = '';
+    if (d.achievements) {
+      for (var j = 0; j < d.achievements.length; j++) {
+        var ach = d.achievements[j];
+        if (typeof ach === 'string' && ach === a.id) { unlocked = true; achDate = ''; break; }
+        if (typeof ach === 'object' && ach.id === a.id) { unlocked = true; achDate = ach.date || ''; break; }
+      }
+    }
     var item = document.createElement('div');
     item.className = 'achieve-item ' + (unlocked?'unlocked':'');
+    var detailHtml = '';
+    if (unlocked && achDate) {
+      detailHtml = '<div class="achieve-detail" id="achDetail-' + a.id + '">达成于 ' + achDate + '</div>';
+    }
     item.innerHTML = '<div class="achieve-icon">' + a.icon + '</div>'
       + '<div class="achieve-name">' + a.name + '</div>'
       + '<div class="achieve-desc">' + a.desc + '</div>'
-      + (unlocked ? '<div style="font-size:10px;color:var(--accent2);margin-top:4px;">✓ 已解锁</div>' : '');
+      + (unlocked ? '<div class="achieve-date-label">✓ 已解锁</div>' : '')
+      + detailHtml;
+    if (unlocked && achDate) {
+      item.onclick = (function(aid){ return function(){ toggleAchieveDetail(aid); }; })(a.id);
+    }
     grid.appendChild(item);
   }
 }
