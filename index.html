@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>健康追踪</title>
+<style>
+  :root {
+    --primary: #4CAF50;
+    --primary-container: #E8F5E9;
+    --on-primary-container: #1B5E20;
+    --surface: #F5F5F5;
+    --surface-container: #FFFFFF;
+    --on-surface: #1C1B1F;
+    --outline: #79747E;
+    --error: #E57373;
+    --water: #64B5F6;
+    --exercise: #81C784;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: var(--surface);
+    color: var(--on-surface);
+    min-height: 100vh;
+  }
+  .app { max-width: 480px; margin: 0 auto; min-height: 100vh; position: relative; }
+
+  /* App Bar */
+  .appbar {
+    background: var(--surface-container);
+    padding: 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid #e0e0e0;
+    position: sticky; top: 0; z-index: 10;
+  }
+  .appbar-title { font-weight: 700; font-size: 18px; }
+  .appbar-sub { font-size: 12px; color: var(--outline); }
+  .bmi-badge {
+    background: var(--primary-container);
+    color: var(--on-primary-container);
+    padding: 4px 12px; border-radius: 16px;
+    font-size: 13px; font-weight: 600;
+  }
+
+  /* Pages */
+  .page { display: none; padding: 16px 16px 100px; }
+  .page.active { display: block; }
+
+  /* Progress Card */
+  .card {
+    background: var(--surface-container);
+    border-radius: 16px; padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  .card-header { display: flex; align-items: center; margin-bottom: 12px; }
+  .card-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    margin-right: 12px; font-size: 18px;
+  }
+  .card-label { font-size: 14px; color: var(--outline); flex: 1; }
+  .card-goal { font-size: 12px; color: var(--outline); cursor: pointer; }
+  .card-value { font-size: 28px; font-weight: 700; }
+  .card-unit { font-size: 13px; color: var(--outline); margin-left: 4px; }
+  .progress-bar { height: 6px; background: #e0e0e0; border-radius: 3px; margin: 8px 0 4px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+  .progress-text { font-size: 11px; text-align: right; }
+
+  /* Quick Adjust */
+  .section-title { font-size: 14px; font-weight: 600; margin: 16px 0 8px; }
+  .chip-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip {
+    border: 1px solid #e0e0e0; border-radius: 20px;
+    padding: 6px 12px; font-size: 13px; cursor: pointer;
+    display: flex; align-items: center; gap: 4px;
+    transition: all 0.2s;
+  }
+  .chip:active { background: var(--primary-container); }
+
+  /* Food List */
+  .food-section-title { display: flex; align-items: center; justify-content: space-between; margin: 16px 0 8px; }
+  .food-section-title h3 { font-size: 14px; font-weight: 600; }
+  .add-btn { color: var(--primary); font-size: 13px; cursor: pointer; }
+  .food-empty {
+    text-align: center; padding: 24px; color: var(--outline);
+    background: var(--surface-container); border-radius: 12px;
+  }
+  .food-item {
+    display: flex; align-items: center; padding: 12px 16px;
+    background: var(--surface-container); border-radius: 12px;
+    margin-bottom: 1px;
+  }
+  .food-item-icon { width: 28px; height: 28px; border-radius: 8px; background: #FFEBEE; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 14px; }
+  .food-item-name { flex: 1; font-size: 14px; }
+  .food-item-cal { font-size: 13px; font-weight: 600; color: var(--error); }
+
+  /* Bottom Nav */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 480px;
+    background: var(--surface-container);
+    display: flex; justify-content: space-around;
+    padding: 8px 0; border-top: 1px solid #e0e0e0;
+    z-index: 10;
+  }
+  .nav-item { display: flex; flex-direction: column; align-items: center; padding: 4px 16px; cursor: pointer; color: var(--outline); font-size: 12px; }
+  .nav-item.active { color: var(--primary); }
+  .nav-item span { font-size: 20px; }
+
+  /* Dialog */
+  .overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5); z-index: 100;
+    display: none; align-items: center; justify-content: center;
+  }
+  .overlay.show { display: flex; }
+  .dialog {
+    background: var(--surface-container); border-radius: 28px;
+    padding: 24px; width: 90%; max-width: 360px;
+  }
+  .dialog h2 { font-size: 18px; margin-bottom: 16px; }
+  .dialog input, .dialog select {
+    width: 100%; padding: 12px; border: 1px solid #e0e0e0;
+    border-radius: 8px; font-size: 14px; margin-bottom: 12px;
+  }
+  .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+  .btn { padding: 8px 16px; border-radius: 20px; border: none; cursor: pointer; font-size: 14px; }
+  .btn-cancel { background: transparent; color: var(--outline); }
+  .btn-primary { background: var(--primary); color: white; }
+
+  /* Quick food chips in dialog */
+  .quick-foods { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .quick-food {
+    padding: 4px 10px; border-radius: 16px; font-size: 12px;
+    background: var(--surface); border: 1px solid #e0e0e0; cursor: pointer;
+  }
+  .quick-food.selected { background: var(--primary); color: white; border-color: var(--primary); }
+
+  /* Stats */
+  .chart-container { height: 160px; margin: 8px 0; }
+  .summary-row { display: flex; justify-content: space-around; text-align: center; }
+  .summary-val { font-size: 20px; font-weight: 700; }
+  .summary-unit { font-size: 12px; color: var(--outline); }
+  .summary-label { font-size: 12px; color: var(--outline); margin-top: 4px; }
+
+  /* Settings */
+  .bmi-card { background: var(--primary-container); border-radius: 16px; padding: 20px; text-align: center; margin-bottom: 16px; }
+  .bmi-value { font-size: 48px; font-weight: 700; color: var(--on-primary-container); }
+  .bmi-label { font-size: 16px; color: var(--on-primary-container); opacity: 0.8; }
+  .setting-item {
+    display: flex; align-items: center; padding: 16px;
+    background: var(--surface-container); border-radius: 12px;
+    margin-bottom: 1px; cursor: pointer;
+  }
+  .setting-item span:first-child { margin-right: 12px; font-size: 20px; }
+  .setting-item-label { flex: 1; font-size: 14px; }
+  .setting-item-value { font-size: 14px; color: var(--outline); }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+    background: #323232; color: white; padding: 12px 24px;
+    border-radius: 8px; font-size: 14px; z-index: 200;
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- App Bar -->
+  <div class="appbar">
+    <div>
+      <div class="appbar-title" id="appbarTitle">健康追踪</div>
+      <div class="appbar-sub" id="appbarSub"></div>
+    </div>
+    <div class="bmi-badge" id="bmiBadge" style="display:none;"></div>
+  </div>
+
+  <!-- Page: Today -->
+  <div class="page active" id="pageHome">
+    <div class="card" id="cardCalories">
+      <div class="card-header">
+        <div class="card-icon" style="background:#FFEBEE">🔥</div>
+        <div class="card-label">热量</div>
+        <div class="card-goal" onclick="editGoal('caloriesGoal','每日热量目标','千卡')">目标: <span id="goalCalories">2000</span> 千卡 ▼</div>
+      </div>
+      <div>
+        <span class="card-value" id="valCalories">0</span>
+        <span class="card-unit">千卡</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progCalories" style="background:var(--error);width:0%"></div></div>
+      <div class="progress-text" id="textCalories">完成 0%</div>
+    </div>
+
+    <div class="card" id="cardWater">
+      <div class="card-header">
+        <div class="card-icon" style="background:#E3F2FD">💧</div>
+        <div class="card-label">饮水</div>
+        <div class="card-goal" onclick="editGoal('waterGoal','每日饮水目标','毫升')">目标: <span id="goalWater">2000</span> 毫升 ▼</div>
+      </div>
+      <div>
+        <span class="card-value" id="valWater">0</span>
+        <span class="card-unit">毫升</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progWater" style="background:var(--water);width:0%"></div></div>
+      <div class="progress-text" id="textWater">完成 0%</div>
+    </div>
+
+    <div class="card" id="cardExercise">
+      <div class="card-header">
+        <div class="card-icon" style="background:#E8F5E9">🏃</div>
+        <div class="card-label">运动</div>
+        <div class="card-goal" onclick="editGoal('exerciseGoal','每日运动目标','分钟')">目标: <span id="goalExercise">60</span> 分钟 ▼</div>
+      </div>
+      <div>
+        <span class="card-value" id="valExercise">0</span>
+        <span class="card-unit">分钟</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progExercise" style="background:var(--exercise);width:0%"></div></div>
+      <div class="progress-text" id="textExercise">完成 0%</div>
+    </div>
+
+    <div class="section-title">快捷调整</div>
+    <div class="chip-row">
+      <div class="chip" onclick="addWater(100)">💧 +100ml</div>
+      <div class="chip" onclick="addWater(250)">💧 +250ml</div>
+      <div class="chip" onclick="addExercise(15)">🏃 +15分钟</div>
+      <div class="chip" onclick="addExercise(30)">🏃 +30分钟</div>
+    </div>
+
+    <div class="food-section-title">
+      <h3>饮食记录</h3>
+      <span class="add-btn" onclick="showFoodDialog()">+ 添加</span>
+    </div>
+    <div id="foodList"></div>
+  </div>
+
+  <!-- Page: Stats -->
+  <div class="page" id="pageStats">
+    <div class="card">
+      <div style="font-weight:600;margin-bottom:12px;">热量趋势 (14天)</div>
+      <canvas id="chartCalories" class="chart-container"></canvas>
+    </div>
+    <div class="card">
+      <div style="font-weight:600;margin-bottom:12px;">饮水趋势 (14天)</div>
+      <canvas id="chartWater" class="chart-container"></canvas>
+    </div>
+    <div class="card">
+      <div style="font-weight:600;margin-bottom:12px;">运动趋势 (14天)</div>
+      <canvas id="chartExercise" class="chart-container"></canvas>
+    </div>
+    <div class="card">
+      <div style="font-weight:600;margin-bottom:12px;">近7日平均</div>
+      <div class="summary-row">
+        <div><div class="summary-val" id="avgCal">0</div><div class="summary-unit">千卡</div><div class="summary-label">热量</div></div>
+        <div><div class="summary-val" id="avgWater">0</div><div class="summary-unit">毫升</div><div class="summary-label">饮水</div></div>
+        <div><div class="summary-val" id="avgEx">0</div><div class="summary-unit">分钟</div><div class="summary-label">运动</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page: Settings -->
+  <div class="page" id="pageSettings">
+    <div class="bmi-card" id="bmiCard" style="display:none;">
+      <div style="font-size:14px;opacity:0.7;">您的 BMI</div>
+      <div class="bmi-value" id="bmiValue">—</div>
+      <div class="bmi-label" id="bmiLevel">—</div>
+    </div>
+
+    <div style="background:var(--surface-container);border-radius:12px;overflow:hidden;">
+      <div class="setting-item" onclick="editProfile('height','身高','cm')">
+        <span>📏</span>
+        <span class="setting-item-label">身高</span>
+        <span class="setting-item-value" id="settingHeight">未设置</span>
+      </div>
+      <div class="setting-item" onclick="editProfile('weight','体重','kg')">
+        <span>⚖️</span>
+        <span class="setting-item-label">体重</span>
+        <span class="setting-item-value" id="settingWeight">未设置</span>
+      </div>
+    </div>
+
+    <div style="background:var(--surface-container);border-radius:12px;overflow:hidden;margin-top:12px;">
+      <div class="setting-item" onclick="editGoal('caloriesGoal','每日热量目标','千卡')">
+        <span>🔥</span>
+        <span class="setting-item-label">每日热量目标</span>
+        <span class="setting-item-value" id="settingGoalCal">2000 千卡</span>
+      </div>
+      <div class="setting-item" onclick="editGoal('waterGoal','每日饮水目标','毫升')">
+        <span>💧</span>
+        <span class="setting-item-label">每日饮水目标</span>
+        <span class="setting-item-value" id="settingGoalWater">2000 毫升</span>
+      </div>
+      <div class="setting-item" onclick="editGoal('exerciseGoal','每日运动目标','分钟')">
+        <span>🏃</span>
+        <span class="setting-item-label">每日运动目标</span>
+        <span class="setting-item-value" id="settingGoalEx">60 分钟</span>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;font-size:12px;color:var(--outline);line-height:1.8;">
+      • 热量计算基于摄入估算，仅供参考<br>
+      • BMI 公式：体重kg ÷ 身高m²<br>
+      • 建议在每日同一时间测量体重
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <div class="nav-item active" data-page="pageHome" onclick="switchPage('pageHome',this)">
+      <span>🏠</span>今日
+    </div>
+    <div class="nav-item" data-page="pageStats" onclick="switchPage('pageStats',this)">
+      <span>📊</span>统计
+    </div>
+    <div class="nav-item" data-page="pageSettings" onclick="switchPage('pageSettings',this)">
+      <span>⚙️</span>设置
+    </div>
+  </div>
+</div>
+
+<!-- Food Dialog -->
+<div class="overlay" id="foodOverlay">
+  <div class="dialog">
+    <h2>添加饮食</h2>
+    <div class="quick-foods" id="quickFoods"></div>
+    <input type="text" id="foodName" placeholder="食物名称 (如：鸡胸肉沙拉)">
+    <input type="number" id="foodCal" placeholder="热量 (千卡)">
+    <div class="dialog-actions">
+      <button class="btn btn-cancel" onclick="hideFoodDialog()">取消</button>
+      <button class="btn btn-primary" onclick="addFood()">添加</button>
+    </div>
+  </div>
+</div>
+
+<!-- Goal/Profile Dialog -->
+<div class="overlay" id="inputOverlay">
+  <div class="dialog">
+    <h2 id="inputTitle">输入</h2>
+    <input type="number" id="inputValue" placeholder="请输入数值">
+    <div class="dialog-actions">
+      <button class="btn btn-cancel" onclick="hideInputDialog()">取消</button>
+      <button class="btn btn-primary" onclick="confirmInput()">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============ Data Layer ============
+const QUICK_FOODS = [
+  {name:'米饭',cal:130},{name:'面条',cal:280},{name:'馒头',cal:220},
+  {name:'鸡蛋',cal:140},{name:'鸡胸肉',cal:130},{name:'牛肉',cal:250},
+  {name:'苹果',cal:50},{name:'香蕉',cal:90},{name:'牛奶',cal:65},{name:'酸奶',cal:70}
+];
+
+const STORAGE_KEY = 'health_tracker_data';
+
+function loadData() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || { records: [], foods: [] };
+  } catch { return { records: [], foods: [] }; }
+}
+function saveData(data) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2,'0')}-${d.getDate().toString().padStart(2,'0')}`;
+}
+
+function getTodayRecord() {
+  const data = loadData();
+  let rec = data.records.find(r => r.date === todayKey());
+  if (!rec) {
+    rec = { date: todayKey(), caloriesConsumed: 0, caloriesGoal: 2000, waterIntake: 0, waterGoal: 2000, exerciseMinutes: 0, exerciseGoal: 60, weight: 0, height: 0, foods: [] };
+    data.records.push(rec);
+    saveData(data);
+  }
+  return rec;
+}
+
+function updateToday(fn) {
+  const data = loadData();
+  let rec = data.records.find(r => r.date === todayKey());
+  if (!rec) {
+    rec = { date: todayKey(), caloriesConsumed: 0, caloriesGoal: 2000, waterIntake: 0, waterGoal: 2000, exerciseMinutes: 0, exerciseGoal: 60, weight: 0, height: 0, foods: [] };
+    data.records.push(rec);
+  }
+  fn(rec);
+  const idx = data.records.findIndex(r => r.date === todayKey());
+  if (idx >= 0) data.records[idx] = rec;
+  saveData(data);
+  renderHome();
+}
+
+// ============ Render ============
+function renderHome() {
+  const rec = getTodayRecord();
+  // Calories
+  document.getElementById('valCalories').textContent = Math.round(rec.caloriesConsumed);
+  document.getElementById('goalCalories').textContent = Math.round(rec.caloriesGoal);
+  const pctCal = rec.caloriesGoal > 0 ? Math.min(rec.caloriesConsumed / rec.caloriesGoal * 100, 100) : 0;
+  document.getElementById('progCalories').style.width = pctCal + '%';
+  const overCal = rec.caloriesConsumed > rec.caloriesGoal;
+  document.getElementById('textCalories').textContent = overCal
+    ? `超标 ${Math.round(rec.caloriesConsumed - rec.caloriesGoal)} 千卡`
+    : `完成 ${Math.round(pctCal)}%`;
+  document.getElementById('textCalories').style.color = overCal ? '#FF9800' : '';
+
+  // Water
+  document.getElementById('valWater').textContent = Math.round(rec.waterIntake);
+  document.getElementById('goalWater').textContent = Math.round(rec.waterGoal);
+  const pctWater = rec.waterGoal > 0 ? Math.min(rec.waterIntake / rec.waterGoal * 100, 100) : 0;
+  document.getElementById('progWater').style.width = pctWater + '%';
+  document.getElementById('textWater').textContent = `完成 ${Math.round(pctWater)}%`;
+
+  // Exercise
+  document.getElementById('valExercise').textContent = rec.exerciseMinutes;
+  document.getElementById('goalExercise').textContent = rec.exerciseGoal;
+  const pctEx = rec.exerciseGoal > 0 ? Math.min(rec.exerciseMinutes / rec.exerciseGoal * 100, 100) : 0;
+  document.getElementById('progExercise').style.width = pctEx + '%';
+  document.getElementById('textExercise').textContent = `完成 ${Math.round(pctEx)}%`;
+
+  // Food list
+  const foodList = document.getElementById('foodList');
+  if (!rec.foods || rec.foods.length === 0) {
+    foodList.innerHTML = '<div class="food-empty">暂无饮食记录<br>点击下方 + 添加</div>';
+  } else {
+    foodList.innerHTML = rec.foods.map((f, i) => `
+      <div class="food-item">
+        <div class="food-item-icon">🍽️</div>
+        <div class="food-item-name">${f.name}</div>
+        <div class="food-item-cal">${Math.round(f.cal)} 千卡</div>
+        <span style="margin-left:8px;cursor:pointer;color:#999;" onclick="deleteFood(${i})">✕</span>
+      </div>
+    `).join('');
+  }
+
+  // BMI badge
+  const bmi = rec.height > 0 && rec.weight > 0 ? rec.weight / ((rec.height/100)*(rec.height/100)) : 0;
+  const badge = document.getElementById('bmiBadge');
+  if (bmi > 0) {
+    badge.style.display = 'block';
+    badge.textContent = `BMI ${bmi.toFixed(1)}`;
+  }
+}
+
+function renderSettings() {
+  const rec = getTodayRecord();
+  const bmiCard = document.getElementById('bmiCard');
+  if (rec.height > 0 && rec.weight > 0) {
+    const bmi = rec.weight / ((rec.height/100)*(rec.height/100));
+    let level = bmi < 18.5 ? '偏瘦' : bmi < 24 ? '正常' : bmi < 28 ? '偏胖' : '肥胖';
+    document.getElementById('bmiValue').textContent = bmi.toFixed(1);
+    document.getElementById('bmiLevel').textContent = level;
+    bmiCard.style.display = 'block';
+  } else {
+    bmiCard.style.display = 'none';
+  }
+  document.getElementById('settingHeight').textContent = rec.height > 0 ? `${Math.round(rec.height)} cm` : '未设置';
+  document.getElementById('settingWeight').textContent = rec.weight > 0 ? `${rec.weight.toFixed(1)} kg` : '未设置';
+  document.getElementById('settingGoalCal').textContent = `${Math.round(rec.caloriesGoal)} 千卡`;
+  document.getElementById('settingGoalWater').textContent = `${Math.round(rec.waterGoal)} 毫升`;
+  document.getElementById('settingGoalEx').textContent = `${rec.exerciseGoal} 分钟`;
+}
+
+// ============ Actions ============
+function addWater(amount) {
+  updateToday(rec => { rec.waterIntake = (rec.waterIntake || 0) + amount; });
+  showToast(`+${amount}ml 饮水`);
+}
+function addExercise(min) {
+  updateToday(rec => { rec.exerciseMinutes = (rec.exerciseMinutes || 0) + min; });
+  showToast(`+${min}分钟 运动`);
+}
+function showFoodDialog() {
+  const qf = document.getElementById('quickFoods');
+  qf.innerHTML = QUICK_FOODS.map(f => `<div class="quick-food" onclick="selectQuickFood(this,'${f.name}',${f.cal})">${f.name}</div>`).join('');
+  document.getElementById('foodName').value = '';
+  document.getElementById('foodCal').value = '';
+  document.getElementById('foodOverlay').classList.add('show');
+}
+function selectQuickFood(el, name, cal) {
+  document.querySelectorAll('.quick-food').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('foodName').value = name;
+  document.getElementById('foodCal').value = cal;
+}
+function hideFoodDialog() { document.getElementById('foodOverlay').classList.remove('show'); }
+function addFood() {
+  const name = document.getElementById('foodName').value.trim();
+  const cal = parseFloat(document.getElementById('foodCal').value);
+  if (!name || isNaN(cal)) { showToast('请输入完整信息'); return; }
+  updateToday(rec => {
+    if (!rec.foods) rec.foods = [];
+    rec.foods.push({ name, cal });
+    rec.caloriesConsumed = rec.foods.reduce((s,f) => s + f.cal, 0);
+  });
+  hideFoodDialog();
+  showToast(`已添加 ${name}`);
+}
+function deleteFood(idx) {
+  updateToday(rec => {
+    rec.foods.splice(idx, 1);
+    rec.caloriesConsumed = rec.foods.reduce((s,f) => s + f.cal, 0);
+  });
+}
+
+// ============ Input Dialog ============
+let inputCallback = null;
+function editProfile(field, label, unit) {
+  const rec = getTodayRecord();
+  document.getElementById('inputTitle').textContent = label;
+  document.getElementById('inputValue').placeholder = `请输入${label} (${unit})`;
+  document.getElementById('inputValue').value = rec[field] || '';
+  inputCallback = (val) => { updateToday(rec => rec[field] = parseFloat(val)); renderSettings(); };
+  document.getElementById('inputOverlay').classList.add('show');
+}
+function editGoal(field, label, unit) {
+  const rec = getTodayRecord();
+  document.getElementById('inputTitle').textContent = label;
+  document.getElementById('inputValue').placeholder = `请输入目标 (${unit})`;
+  document.getElementById('inputValue').value = rec[field] || '';
+  inputCallback = (val) => { updateToday(rec => rec[field] = parseFloat(val)); renderHome(); renderSettings(); };
+  document.getElementById('inputOverlay').classList.add('show');
+}
+function hideInputDialog() { document.getElementById('inputOverlay').classList.remove('show'); inputCallback = null; }
+function confirmInput() {
+  const val = document.getElementById('inputValue').value;
+  if (val && inputCallback) inputCallback(val);
+  hideInputDialog();
+}
+
+// ============ Navigation ============
+function switchPage(pageId, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+  if (pageId === 'pageStats') renderStats();
+  if (pageId === 'pageSettings') renderSettings();
+  // Update appbar
+  const titles = { pageHome: '健康追踪', pageStats: '数据统计', pageSettings: '设置' };
+  document.getElementById('appbarTitle').textContent = titles[pageId];
+  const d = new Date();
+  const weekdays = ['日','一','二','三','四','五','六'];
+  document.getElementById('appbarSub').textContent = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 周${weekdays[d.getDay()]}`;
+}
+
+// ============ Stats ============
+function renderStats() {
+  const data = loadData();
+  const records = data.records.sort((a,b) => a.date > b.date ? 1 : -1).slice(-14);
+  if (records.length < 2) { showToast('需要至少2天数据'); return; }
+  // Simple bar chart using canvas
+  drawBarChart('chartCalories', records.map(r => r.caloriesConsumed || 0), '#E57373');
+  drawBarChart('chartWater', records.map(r => r.waterIntake || 0), '#64B5F6');
+  drawBarChart('chartExercise', records.map(r => r.exerciseMinutes || 0), '#81C784');
+  // Avg
+  const recent = records.slice(-7);
+  document.getElementById('avgCal').textContent = Math.round(recent.reduce((s,r)=>s+(r.caloriesConsumed||0),0)/recent.length);
+  document.getElementById('avgWater').textContent = Math.round(recent.reduce((s,r)=>s+(r.waterIntake||0),0)/recent.length);
+  document.getElementById('avgEx').textContent = Math.round(recent.reduce((s,r)=>s+(r.exerciseMinutes||0),0)/recent.length);
+}
+
+function drawBarChart(canvasId, values, color) {
+  const canvas = document.getElementById(canvasId);
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth * 2;
+  canvas.height = 160 * 2;
+  ctx.scale(2, 2);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const w = canvas.offsetWidth;
+  const h = 160;
+  const max = Math.max(...values, 1);
+  const barW = Math.max(4, (w / values.length) - 4);
+  values.forEach((v, i) => {
+    const barH = (v / max) * (h - 24);
+    const x = i * (w / values.length) + 2;
+    const y = h - barH - 8;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.roundRect(x, y, barW, barH, 2);
+    ctx.fill();
+  });
+}
+
+// ============ Toast ============
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ============ Init ============
+(function() {
+  const d = new Date();
+  const weekdays = ['日','一','二','三','四','五','六'];
+  document.getElementById('appbarSub').textContent = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 周${weekdays[d.getDay()]}`;
+  renderHome();
+})();
+</script>
+</body>
+</html>
