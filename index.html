@@ -520,32 +520,32 @@ body {
       <div class="profile-bmi-label" id="profileBmiLabel">BMI</div>
     </div>
     <div class="setting-row" onclick="openProfileSheet('height')">
-      <span class="setting-row-icon">H</span>
+      <span class="setting-row-icon">📏</span>
       <span class="setting-row-label">身高</span>
       <span class="setting-row-val" id="setHeight">未设置</span>
       <span class="setting-row-arrow">></span>
     </div>
     <div class="setting-row" onclick="openWeightSheet()">
-      <span class="setting-row-icon">W</span>
+      <span class="setting-row-icon">⚖️</span>
       <span class="setting-row-label">记录体重</span>
       <span class="setting-row-val" id="setWeight">未设置</span>
       <span class="setting-row-arrow">></span>
     </div>
     <div style="height:10px;"></div>
     <div class="setting-row" onclick="openGoalSheet('cal')">
-      <span class="setting-row-icon">C</span>
+      <span class="setting-row-icon">🔥</span>
       <span class="setting-row-label">热量目标</span>
       <span class="setting-row-val" id="setGoalCal">2000 千卡</span>
       <span class="setting-row-arrow">></span>
     </div>
     <div class="setting-row" onclick="openGoalSheet('water')">
-      <span class="setting-row-icon">W</span>
+      <span class="setting-row-icon">⚖️</span>
       <span class="setting-row-label">饮水目标</span>
       <span class="setting-row-val" id="setGoalWater">2000 毫升</span>
       <span class="setting-row-arrow">></span>
     </div>
     <div class="setting-row" onclick="openGoalSheet('ex')">
-      <span class="setting-row-icon">E</span>
+      <span class="setting-row-icon">🏃</span>
       <span class="setting-row-label">运动目标</span>
       <span class="setting-row-val" id="setGoalEx">60 分钟</span>
       <span class="setting-row-arrow">></span>
@@ -562,16 +562,16 @@ body {
   <!-- Bottom Nav -->
   <div class="bottom-nav">
     <div class="nav-item active" data-page="pageHome" onclick="switchPage('pageHome',this)">
-      <span class="nav-item-icon">H</span>今日
+      <span class="nav-item-icon">🏠</span>今日
     </div>
     <div class="nav-item" data-page="pageStats" onclick="switchPage('pageStats',this)">
-      <span class="nav-item-icon">S</span>统计
+      <span class="nav-item-icon">📊</span>统计
     </div>
     <div class="nav-item" data-page="pageAchieve" onclick="switchPage('pageAchieve',this)">
-      <span class="nav-item-icon">A</span>成就
+      <span class="nav-item-icon">🏆</span>成就
     </div>
     <div class="nav-item" data-page="pageSettings" onclick="switchPage('pageSettings',this)">
-      <span class="nav-item-icon">G</span>设置
+      <span class="nav-item-icon">⚙️</span>设置
     </div>
   </div>
 </div>
@@ -582,7 +582,7 @@ body {
     <div class="sheet-handle"></div>
     <div class="sheet-title">添加饮食</div>
     <div class="search-box">
-      <span>Q</span>
+      <span style="font-size:16px;">🔍</span>
       <input type="text" id="foodSearch" placeholder="搜索食物..." oninput="filterFood()">
     </div>
     <div class="food-grid" id="foodGrid"></div>
