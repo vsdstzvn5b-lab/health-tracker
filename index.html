@@ -667,6 +667,10 @@ body {
   <div class="sheet">
     <div class="sheet-handle"></div>
     <div class="sheet-title">添加饮食</div>
+    <div class="input-row">
+      <label>日期</label>
+      <input type="date" id="foodDateInput">
+    </div>
     <div class="search-box">
       <span style="font-size:16px;">🔍</span>
       <input type="text" id="foodSearch" placeholder="搜索食物..." oninput="filterFood()">
@@ -1236,11 +1240,36 @@ function drawLineChart(canvasId, values, color) {
 
   ctx.clearRect(0, 0, w, h);
 
-  if (values.length<2) {
+  if (values.length<1) {
     ctx.fillStyle = 'var(--text2)';
     ctx.font = '12px Inter';
     ctx.textAlign = 'center';
-    ctx.fillText('需要更多数据', w/2, h/2);
+    ctx.fillText('没有数据', w/2, h/2);
+    return;
+  }
+
+  if (values.length<2) {
+    // 只有1个数据点：显示点 + 数值标签
+    var v = values[0];
+    var max = v * 1.2 || 1;
+    var min = v * 0.8;
+    var range = max - min;
+    var y = h - (v-min)/range*(h*0.8) - h*0.1;
+    // 画紫色点
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(w/2, y, 4, 0, Math.PI*2);
+    ctx.fill();
+    // 白色中心点
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(w/2, y, 2, 0, Math.PI*2);
+    ctx.fill();
+    // 数值标签
+    ctx.fillStyle = color;
+    ctx.font = 'bold 12px Inter';
+    ctx.textAlign = 'center';
+    ctx.fillText(Math.round(v), w/2, y - 12);
     return;
   }
 
