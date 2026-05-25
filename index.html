@@ -84,11 +84,11 @@ body {
 .metric-icon {
   width: 38px; height: 38px; border-radius: 12px;
   display: flex; align-items: center; justify-content: center;
-  font-size: 18px;
 }
 .metric-icon.cal { background: var(--red-bg); }
 .metric-icon.water { background: var(--blue-bg); }
 .metric-icon.ex { background: var(--green-bg); }
+.metric-icon svg { width: 20px; height: 20px; }
 .metric-label { font-size: 13px; color: var(--text2); font-weight: 500; }
 .metric-goal { font-size: 11px; color: var(--text2); cursor: pointer; opacity: 0.7; }
 .metric-value-row { display: flex; align-items: baseline; gap: 4px; margin-bottom: 12px; }
@@ -173,8 +173,9 @@ body {
   transition: all 0.2s; color: var(--text2); font-size: 10px; font-weight: 500;
 }
 .nav-item.active { color: var(--accent2); }
-.nav-item-icon { font-size: 22px; transition: transform 0.2s; }
+.nav-item-icon { transition: transform 0.2s; display: flex; align-items: center; justify-content: center; }
 .nav-item.active .nav-item-icon { transform: scale(1.1); }
+.nav-item-icon svg { width: 22px; height: 22px; }
 
 .overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200;
@@ -395,6 +396,42 @@ body {
   position: absolute; width: 6px; height: 6px; border-radius: 50%;
   top: 50%; left: 50%; opacity: 0;
 }
+
+/* Streak bar styles for stats page */
+.streak-bar {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  padding: 0 4px;
+}
+.streak-dot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+.streak-dot .dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 2px solid var(--border);
+  transition: all 0.3s;
+}
+.streak-dot.done .dot {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-color: var(--accent);
+  box-shadow: 0 0 12px rgba(108,92,231,0.4);
+}
+.streak-dot .day-label {
+  font-size: 11px;
+  color: var(--text2);
+  font-weight: 500;
+}
+.streak-dot.done .day-label {
+  color: var(--accent2);
+}
 </style>
 </head>
 <body>
@@ -415,10 +452,15 @@ body {
     <div class="glass metric-card cal" id="cardCal">
       <div class="metric-header">
         <div class="metric-left">
-          <div class="metric-icon cal">F</div>
+          <div class="metric-icon cal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#FF6B6B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+              <path d="M12 8v4l3 3"/>
+            </svg>
+          </div>
           <div><div class="metric-label">热量摄入</div></div>
         </div>
-        <div class="metric-goal" onclick="openGoalSheet('cal')">E</div>
+        <div class="metric-goal" onclick="openGoalSheet('cal')">✎</div>
       </div>
       <div class="metric-value-row">
         <span class="metric-value" id="valCal">0</span>
@@ -431,10 +473,14 @@ body {
     <div class="glass metric-card water" id="cardWater">
       <div class="metric-header">
         <div class="metric-left">
-          <div class="metric-icon water">W</div>
+          <div class="metric-icon water">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#74B9FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+            </svg>
+          </div>
           <div><div class="metric-label">饮水量</div></div>
         </div>
-        <div class="metric-goal" onclick="openGoalSheet('water')">E</div>
+        <div class="metric-goal" onclick="openGoalSheet('water')">✎</div>
       </div>
       <div class="metric-value-row">
         <span class="metric-value" id="valWater">0</span>
@@ -447,10 +493,14 @@ body {
     <div class="glass metric-card ex" id="cardEx">
       <div class="metric-header">
         <div class="metric-left">
-          <div class="metric-icon ex">E</div>
+          <div class="metric-icon ex">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#00D68F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+          </div>
           <div><div class="metric-label">运动</div></div>
         </div>
-        <div class="metric-goal" onclick="openGoalSheet('ex')">E</div>
+        <div class="metric-goal" onclick="openGoalSheet('ex')">✎</div>
       </div>
       <div class="metric-value-row">
         <span class="metric-value" id="valEx">0</span>
@@ -539,7 +589,7 @@ body {
       <span class="setting-row-arrow">></span>
     </div>
     <div class="setting-row" onclick="openGoalSheet('water')">
-      <span class="setting-row-icon">⚖️</span>
+      <span class="setting-row-icon">💧</span>
       <span class="setting-row-label">饮水目标</span>
       <span class="setting-row-val" id="setGoalWater">2000 毫升</span>
       <span class="setting-row-arrow">></span>
@@ -562,16 +612,46 @@ body {
   <!-- Bottom Nav -->
   <div class="bottom-nav">
     <div class="nav-item active" data-page="pageHome" onclick="switchPage('pageHome',this)">
-      <span class="nav-item-icon">🏠</span>今日
+      <span class="nav-item-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      </span>
+      <span>今日</span>
     </div>
     <div class="nav-item" data-page="pageStats" onclick="switchPage('pageStats',this)">
-      <span class="nav-item-icon">📊</span>统计
+      <span class="nav-item-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"/>
+          <line x1="12" y1="20" x2="12" y2="4"/>
+          <line x1="6" y1="20" x2="6" y2="14"/>
+        </svg>
+      </span>
+      <span>统计</span>
     </div>
     <div class="nav-item" data-page="pageAchieve" onclick="switchPage('pageAchieve',this)">
-      <span class="nav-item-icon">🏆</span>成就
+      <span class="nav-item-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5C7 4 7 7 7 7"/>
+          <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5C17 4 17 7 17 7"/>
+          <path d="M4 22h16"/>
+          <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20 7 20"/>
+          <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20 17 20"/>
+          <path d="M12 3v8"/>
+          <path d="M8 7l4-4 4 4"/>
+        </svg>
+      </span>
+      <span>成就</span>
     </div>
     <div class="nav-item" data-page="pageSettings" onclick="switchPage('pageSettings',this)">
-      <span class="nav-item-icon">⚙️</span>设置
+      <span class="nav-item-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </span>
+      <span>设置</span>
     </div>
   </div>
 </div>
@@ -1119,7 +1199,10 @@ function renderStreak(d) {
     var d2 = new Date(today); d2.setDate(d2.getDate()-i);
     var key = d2.getFullYear() + '-' + String(d2.getMonth()+1).padStart(2,'0') + '-' + String(d2.getDate()).padStart(2,'0');
     var hasData = d.records[key] && ((d.records[key].foods&&d.records[key].foods.length>0) || d.records[key].water>0 || d.records[key].exercise>0);
-    html += '<div class="streak-dot ' + (hasData?'done':'') + '">' + days[d2.getDay()] + '</div>';
+    html += '<div class="streak-dot ' + (hasData?'done':'') + '">'
+      + '<div class="dot"></div>'
+      + '<span class="day-label">周' + days[d2.getDay()] + '</span>'
+      + '</div>';
   }
   bar.innerHTML = html;
 }
@@ -1251,6 +1334,7 @@ function renderSettings() {
     var bmi = w/((d.height/100)*(d.height/100));
     var label = bmi<18.5?'偏瘦':bmi<24?'正常':bmi<28?'偏胖':'肥胖';
     document.getElementById('profileBmi').textContent = bmi.toFixed(1);
+
     document.getElementById('profileBmiLabel').textContent = 'BMI  ' + label;
     document.getElementById('profileCard').style.display='block';
   }
