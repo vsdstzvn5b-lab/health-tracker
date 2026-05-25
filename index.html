@@ -341,8 +341,79 @@ canvas.chart-canvas { width: 100% !important; height: 100% !important; }
 .food-dropdown-item-cal { font-size: 13px; color: var(--red); font-weight: 600; }
 .food-dropdown-empty {
   padding: 16px; text-align: center; font-size: 13px; color: var(--text2);
-}</style>
-</head>
+}
+/* ===== Achievement Unlock Popup ===== */
+.achieve-popup-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  display: none; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: achFadeIn 0.3s ease-out;
+}
+.achieve-popup-overlay.show { display: flex; }
+@keyframes achFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.achieve-popup {
+  background: linear-gradient(135deg, #1A1A2E 0%, #16162A 50%, #12122A 100%);
+  border: 1px solid rgba(162,155,254,0.3);
+  border-radius: 28px; padding: 36px 32px 28px; text-align: center;
+  max-width: 320px; width: 88%; position: relative; overflow: hidden;
+  animation: achPopIn 0.5s cubic-bezier(0.175,0.885,0.32,1.275);
+  box-shadow: 0 0 60px rgba(108,92,231,0.3), 0 0 120px rgba(162,155,254,0.15);
+}
+@keyframes achPopIn {
+  0%   { transform: scale(0.5) translateY(40px); opacity: 0; }
+  100% { transform: scale(1) translateY(0);    opacity: 1; }
+}
+
+/* Glow ring behind icon */
+.achieve-popup::before {
+  content: ''; position: absolute; top: -30px; left: 50%; transform: translateX(-50%);
+  width: 140px; height: 140px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(108,92,231,0.35) 0%, transparent 70%);
+  pointer-events: none; animation: achGlow 1.5s ease-in-out infinite alternate;
+}
+@keyframes achGlow {
+  0%   { transform: translateX(-50%) scale(1);   opacity: 0.6; }
+  100% { transform: translateX(-50%) scale(1.3); opacity: 1; }
+}
+
+.achieve-popup-icon {
+  font-size: 56px; position: relative; z-index: 1;
+  animation: achBounce 0.6s ease-out 0.15s both;
+}
+@keyframes achBounce {
+  0%   { transform: scale(0) rotate(-15deg); }
+  60%  { transform: scale(1.3) rotate(5deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+.achieve-popup-label {
+  font-size: 11px; font-weight: 600; letter-spacing: 1.5px;
+  color: var(--accent2); text-transform: uppercase; margin-top: 12px;
+  opacity: 0; animation: achFadeUp 0.4s ease-out 0.3s both;
+}
+.achieve-popup-name {
+  font-size: 22px; font-weight: 800; color: #fff; margin-top: 6px;
+  opacity: 0; animation: achFadeUp 0.4s ease-out 0.42s both;
+}
+.achieve-popup-desc {
+  font-size: 13px; color: var(--text2); margin-top: 8px; line-height: 1.5;
+  opacity: 0; animation: achFadeUp 0.4s ease-out 0.54s both;
+}
+@keyframes achFadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Particles */
+.achieve-particles { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.achieve-particle {
+  position: absolute; width: 6px; height: 6px; border-radius: 50%;
+  top: 50%; left: 50%; opacity: 0;
+}
+
+</style></head>
 <body>
 <div class="phone" id="app">
 
@@ -892,8 +963,71 @@ function unlockAchievement(id) {
   if (d.achievements.includes(id)) return;
   d.achievements.push(id); saveData(d);
   const a = ACHIEVEMENTS.find(a=>a.id===id);
-  if (a) showToast(`🏆 成就解锁：${a.name}！`);
+  if (a) showAchievementPopup(a);
 }
+
+function showAchievementPopup(a) {
+  var iconEl = document.getElementById('achievePopupIcon');
+  var nameEl = document.getElementById('achievePopupName');
+  var descEl = document.getElementById('achievePopupDesc');
+  if (iconEl) iconEl.textContent = a.icon;
+  if (nameEl) nameEl.textContent = a.name;
+  if (descEl) descEl.textContent = a.desc;
+  var overlay = document.getElementById('achievePopup');
+  if (overlay) overlay.classList.add('show');
+  spawnParticles();
+  clearTimeout(window.__achTimer);
+  window.__achTimer = setTimeout(hideAchievementPopup, 3500);
+}
+
+function hideAchievementPopup() {
+  var overlay = document.getElementById('achievePopup');
+  if (overlay) overlay.classList.remove('show');
+  clearTimeout(window.__achTimer);
+  var pc = document.getElementById('achieveParticles');
+  if (pc) pc.innerHTML = ';
+}
+
+function spawnParticles() {
+  var container = document.getElementById('achieveParticles');
+  if (!container) return;
+  container.innerHTML = ';
+  var colors = ['#6C5CE7','#A29BFE','#FDCB6E','#00D68F','#FF6B6B','#74B9FF','#ffeaa7'];
+  for (var i = 0; i < 18; i++) {
+    var p2 = document.createElement('div');
+    p2.className = 'achieve-particle';
+    var angle = (360 / 18) * i + (Math.random()*20 - 10);
+    var dist = 40 + Math.random() * 60;
+    var dx = Math.cos(angle * Math.PI/180) * dist;
+    var dy = Math.sin(angle * Math.PI/180) * dist;
+    var color = colors[Math.floor(Math.random()*colors.length)];
+    var size = 4 + Math.random() * 5;
+    p2.style.width = size + 'px';
+    p2.style.height = size + 'px';
+    p2.style.background = color;
+    p2.style.position = 'absolute';
+    p2.style.top = '50%';
+    p2.style.left = '50%';
+    p2.style.marginLeft = -(size/2) + 'px';
+    p2.style.marginTop = -(size/2) + 'px';
+    p2.style.borderRadius = '50%';
+    p2.style.opacity = '1';
+    p2.style.zIndex = '10';
+    p2.style.transition = 'transform 0.8s cubic-bezier(0.22,1,0.36,1), opacity 0.6s ease ' + (0.05*i) + 's';
+    p2.style.transform = 'translate(0,0) scale(1)';
+    container.appendChild(p2);
+    (function(el, dxVal, dyVal, delay) {
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
+          el.style.transform = 'translate(' + dxVal + 'px,' + dyVal + 'px) scale(0.3)';
+          el.style.opacity = '0';
+        });
+      });
+    })(p2, dx, dy, 0.05*i);
+  }
+  setTimeout(function() { container.innerHTML = '; }, 1200);
+}
+
 function renderAchievements() {
   const d = loadData();
   const grid = document.getElementById('achieveGrid');
@@ -1119,5 +1253,19 @@ function selectFoodFromDropdown(name, cal) {
   if (dd) dd.classList.remove('show');
 }
 </script>
+
+<!-- Achievement Unlock Popup -->
+<div class="achieve-popup-overlay" id="achievePopup" onclick="hideAchievementPopup()">
+  <div class="achieve-popup" onclick="event.stopPropagation()">
+    <div class="achieve-particles" id="achieveParticles"></div>
+    <div class="achieve-popup-icon" id="achievePopupIcon"></div>
+    <div class="achieve-popup-label">🏆 成就解锁</div>
+    <div class="achieve-popup-name"  id="achievePopupName"></div>
+    <div class="achieve-popup-desc"  id="achievePopupDesc"></div>
+    <div style="margin-top:20px;opacity:0;animation:achFadeUp 0.4s ease-out 0.66s both;">
+      <button class="btn-primary" onclick="hideAchievementPopup()" style="width:100%;padding:12px;border:none;font-size:15px;">太棒了！</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
