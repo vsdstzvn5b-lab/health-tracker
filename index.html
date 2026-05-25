@@ -698,6 +698,10 @@ body {
     <div class="sheet-handle"></div>
     <div class="sheet-title">记录运动</div>
     <div class="input-row">
+      <label>日期</label>
+      <input type="date" id="exDateInput">
+    </div>
+    <div class="input-row">
       <label>运动类型</label>
       <select id="exType">
         <option value="跑步">跑步</option>
@@ -911,11 +915,15 @@ function deleteFood(idx) {
   t.cal = t.foods.reduce(function(s,f){ return s+f.cal; },0);
   saveToday(t); renderHome();
 }
-function addExercise(min, type) {
-  var t = getToday(); t.exercise = (t.exercise||0)+min;
-  if (!t.exercises) t.exercises = [];
-  t.exercises.push({ type:type, min:min, date:new Date().toISOString() });
-  saveToday(t); renderHome();
+function addExercise(min, type, dateKey) {
+  var key = dateKey || todayKey();
+  var d = loadData();
+  if (!d.records[key]) d.records[key] = { foods:[], water:0, exercise:0, cal:0 };
+  d.records[key].exercise = (d.records[key].exercise||0) + min;
+  if (!d.records[key].exercises) d.records[key].exercises = [];
+  d.records[key].exercises.push({ type:type, min:min, date:new Date().toISOString() });
+  saveData(d);
+  if (key === todayKey()) { renderHome(); }
 }
 
 // ===== Food Sheet =====
@@ -923,6 +931,10 @@ function openFoodSheet() {
   document.getElementById('foodSearch').value = '';
   document.getElementById('foodNameInput').value = '';
   document.getElementById('foodCalInput').value = '';
+  // 默认日期为今天
+  var today = new Date();
+  var ds = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+  document.getElementById('foodDateInput').value = ds;
   renderFoodGrid('');
   document.getElementById('foodOverlay').classList.add('show');
 }
@@ -990,22 +1002,35 @@ function selectFoodFromDropdown(name, cal) {
 function confirmFood() {
   var name = document.getElementById('foodNameInput').value.trim();
   var cal = parseFloat(document.getElementById('foodCalInput').value);
+  var date = document.getElementById('foodDateInput').value;
   if (!name || isNaN(cal)) { showToast('请填写完整信息'); return; }
-  var t = getToday(); if (!t.foods) t.foods=[];
-  t.foods.push({name:name, cal:cal}); t.cal = t.foods.reduce(function(s,f){ return s+f.cal; },0);
-  saveToday(t);
+  if (!date) { showToast('请选择日期'); return; }
+  var d = loadData();
+  if (!d.records[date]) d.records[date] = { foods:[], water:0, exercise:0, cal:0 };
+  if (!d.records[date].foods) d.records[date].foods = [];
+  d.records[date].foods.push({name:name, cal:cal});
+  d.records[date].cal = d.records[date].foods.reduce(function(s,f){ return s+f.cal; },0);
+  saveData(d);
   hideSheet('foodOverlay'); renderHome(); showToast('已添加 ' + name);
-  unlockAchievement('first_food');
+  if (date === todayKey()) { renderHome(); }
   var d2 = loadData();
-  if (d2.goals && t.cal <= d2.goals.cal) unlockAchievement('cal_under');
+  if (d2.goals && d.records[date] && d.records[date].cal <= d2.goals.cal) unlockAchievement('cal_under');
+  unlockAchievement('first_food');
 }
 
-function openExerciseSheet() { document.getElementById('exOverlay').classList.add('show'); }
+function openExerciseSheet() {
+  var today = new Date();
+  var ds = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+  document.getElementById('exDateInput').value = ds;
+  document.getElementById('exOverlay').classList.add('show');
+}
 function confirmExercise() {
   var type = document.getElementById('exType').value;
   var min = parseInt(document.getElementById('exMinutes').value);
+  var date = document.getElementById('exDateInput').value;
   if (!min || min<=0) { showToast('请输入运动时长'); return; }
-  addExercise(min, type);
+  if (!date) { showToast('请选择日期'); return; }
+  addExercise(min, type, date);
   hideSheet('exOverlay'); showToast('记录了 ' + min + ' 分钟 ' + type);
   unlockAchievement('first_ex');
 }
