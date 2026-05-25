@@ -985,13 +985,13 @@ function hideAchievementPopup() {
   if (overlay) overlay.classList.remove('show');
   clearTimeout(window.__achTimer);
   var pc = document.getElementById('achieveParticles');
-  if (pc) pc.innerHTML = ';
+  if (pc) pc.innerHTML = '';
 }
 
 function spawnParticles() {
   var container = document.getElementById('achieveParticles');
   if (!container) return;
-  container.innerHTML = ';
+  container.innerHTML = '';
   var colors = ['#6C5CE7','#A29BFE','#FDCB6E','#00D68F','#FF6B6B','#74B9FF','#ffeaa7'];
   for (var i = 0; i < 18; i++) {
     var p2 = document.createElement('div');
@@ -1025,7 +1025,7 @@ function spawnParticles() {
       });
     })(p2, dx, dy, 0.05*i);
   }
-  setTimeout(function() { container.innerHTML = '; }, 1200);
+  setTimeout(function() { container.innerHTML = ''; }, 1200);
 }
 
 function renderAchievements() {
@@ -1221,51 +1221,7 @@ function showToast(msg) {
   }
 })();
 </script>
-  <script src="food-db.js">
-// ---- 输入名称自动匹配热量 ----
-function autoSearchFood() {
-  const q = (document.getElementById('foodNameInput')||{}).value.trim();
-  const dd = document.getElementById('foodDropdown');
-  if (!dd) return;
-  if (!q) { dd.classList.remove('show'); return; }
-  const matches = (window.FOOD_DB||[]).filter(f => f.name.indexOf(q) !== -1).slice(0, 8);
-  if (matches.length === 0) {
-    dd.innerHTML = '<div class="food-dropdown-empty">未找到匹配食物，请手动输入热量</div>';
-    dd.classList.add('show');
-    return;
-  }
-  dd.innerHTML = matches.map(f => {
-    const safe = f.name.replace(/'/g, '\\'  ');
-    return '<div class="food-dropdown-item" onclick="selectFoodFromDropdown('' + safe + '\', ' + f.cal + ')' + ''  '>' +
-      '<span class="food-dropdown-item-name">' + f.name + '</span>' +
-      '<span class="food-dropdown-item-cal">' + Math.round(f.cal) + ' 千卡</span>' +
-      '</div>';
-  }).join('');
-  dd.classList.add('show');
-}
-
-function selectFoodFromDropdown(name, cal) {
-  const n = document.getElementById('foodNameInput');
-  const c = document.getElementById('foodCalInput');
-  if (n) n.value = name;
-  if (c) c.value = cal;
-  const dd = document.getElementById('foodDropdown');
-  if (dd) dd.classList.remove('show');
-}
-</script>
-
-<!-- Achievement Unlock Popup -->
-<div class="achieve-popup-overlay" id="achievePopup" onclick="hideAchievementPopup()">
-  <div class="achieve-popup" onclick="event.stopPropagation()">
-    <div class="achieve-particles" id="achieveParticles"></div>
-    <div class="achieve-popup-icon" id="achievePopupIcon"></div>
-    <div class="achieve-popup-label">🏆 成就解锁</div>
-    <div class="achieve-popup-name"  id="achievePopupName"></div>
-    <div class="achieve-popup-desc"  id="achievePopupDesc"></div>
-    <div style="margin-top:20px;opacity:0;animation:achFadeUp 0.4s ease-out 0.66s both;">
-      <button class="btn-primary" onclick="hideAchievementPopup()" style="width:100%;padding:12px;border:none;font-size:15px;">太棒了！</button>
-    </div>
-  </div>
-</div>
+    <script src="food-db.js"></script>
 </body>
+</html>
 </html>
