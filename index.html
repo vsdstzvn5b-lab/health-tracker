@@ -404,9 +404,12 @@ body {
 /* Streak bar styles for stats page */
 .streak-bar {
   display: flex;
-  gap: 8px;
+  gap: 4px;
   justify-content: space-between;
-  padding: 0 4px;
+  padding: 8px 4px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
 }
 .streak-dot {
   display: flex;
@@ -414,27 +417,47 @@ body {
   align-items: center;
   gap: 6px;
   flex: 1;
+  cursor: pointer;
+  scroll-snap-align: center;
+  min-width: 44px;
 }
 .streak-dot .dot {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: var(--surface2);
   border: 2px solid var(--border);
   transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text2);
+  user-select: none;
 }
 .streak-dot.done .dot {
   background: linear-gradient(135deg, var(--accent), var(--accent2));
   border-color: var(--accent);
   box-shadow: 0 0 12px rgba(108,92,231,0.4);
+  color: white;
+}
+.streak-dot.selected .dot {
+  border-color: var(--accent2);
+  box-shadow: 0 0 0 3px rgba(162,155,254,0.3);
+  transform: scale(1.15);
 }
 .streak-dot .day-label {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text2);
   font-weight: 500;
 }
 .streak-dot.done .day-label {
   color: var(--accent2);
+}
+.streak-dot.selected .day-label {
+  color: var(--accent2);
+  font-weight: 700;
 }
 
 </style>
@@ -799,7 +822,25 @@ body {
 
 <div class="toast" id="toast"></div>
 
-<script src="food-db.js"></script>
+<script src="food-db.js">
+// 滑动手势：在 streak-bar 上左右滑动切换日期
+(function(){
+  var bar = document.getElementById('streakBar');
+  if (!bar) return;
+  var startX = 0;
+  bar.addEventListener('touchstart', function(e) { startX = e.touches[0].clientX; }, {passive:true});
+  bar.addEventListener('touchend', function(e) {
+    var dx = e.changedTouches[0].clientX - startX;
+    if (Math.abs(dx) < 30) return;
+    var d = loadData();
+    var keys = Object.keys(d.records).sort();
+    var idx = keys.indexOf(selectedDateKey);
+    if (dx > 0 && idx > 0) selectStreakDate(keys[idx-1]);
+    else if (dx < 0 && idx < keys.length-1) selectStreakDate(keys[idx+1]);
+  }, {passive:true});
+})();
+
+</script>
 <script>
 // ===== Achievement definitions =====
 var ACHIEVEMENTS = [
@@ -1204,6 +1245,7 @@ function spawnParticles() {
 
 // ===== Stats =====
 function renderStats() {
+  selectedDateKey = selectedDateKey || todayKey();
   var d = loadData();
   var keys = Object.keys(d.records).sort().slice(-14);
   var records = [];
@@ -1231,21 +1273,78 @@ function renderStats() {
   }
 }
 
+var selectedDateKey = '';
+
 function renderStreak(d) {
   var bar = document.getElementById('streakBar');
   var today = new Date();
-  var html = '';
+  var html2 = '';
+  var weekdays = ['日','一','二','三','四','五','六'];
   for (var i = 6; i >= 0; i--) {
     var d2 = new Date(today); d2.setDate(d2.getDate()-i);
     var key = d2.getFullYear() + '-' + String(d2.getMonth()+1).padStart(2,'0') + '-' + String(d2.getDate()).padStart(2,'0');
     var hasData = d.records[key] && ((d.records[key].foods&&d.records[key].foods.length>0) || d.records[key].water>0 || d.records[key].exercise>0);
     var isToday = (i === 0);
-    html += '<div class="streak-dot ' + (hasData?'done':'') + (isToday?' today':'') + '">'
-      + '<div class="dot"></div>'
-      + '<span class="day-label">' + d2.getDate() + '日</span>'
+    var isSelected = (key === selectedDateKey);
+    html2 += '<div class="streak-dot ' + (hasData?'done':'') + (isToday?' today':'') + (isSelected?' selected':'') + '" data-key="' + key + '">' 
+      + '<div class="dot">' + d2.getDate() + '</div>'
+      + '<span class="day-label">周' + weekdays[d2.getDay()] + '</span>'
       + '</div>';
   }
-  bar.innerHTML = html;
+  bar.innerHTML = html2;
+  // 事件委托
+  bar.onclick = function(e) {
+    var el = e.target.closest('.streak-dot');
+    if (el && el.dataset.key) selectStreakDate(el.dataset.key);
+  };
+}
+
+function selectStreakDate(key) {
+  selectedDateKey = key;
+  renderStreak(loadData());
+  showStatsForDate(key);
+}
+
+function showStatsForDate(dateKey) {
+  var d = loadData();
+  var r = d.records[dateKey];
+  var box = document.getElementById('statsDetail');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'statsDetail';
+    box.style.marginBottom = '16px';
+    var bar2 = document.getElementById('streakBar');
+    bar2.parentNode.insertBefore(box, bar2.nextSibling);
+  }
+  if (!r) {
+    box.innerHTML = '<div class="glass" style="padding:14px;font-size:13px;color:var(--text2);">' + dateKey + ' 暂无记录，点击圆形可补记</div>';
+    return;
+  }
+  var g = d.goals || {cal:2000, water:2000, ex:60};
+  var h = '<div class="glass" style="padding:14px;">'
+    + '<div style="font-size:13px;color:var(--text2);margin-bottom:10px;font-weight:600;">' + dateKey + ' 详情</div>'
+    + '<div style="display:flex;gap:12px;flex-wrap:wrap;">'
+    +   '<div style="flex:1;min-width:80px;text-align:center;padding:8px;background:var(--surface2);border-radius:12px;">'
+    +     '<div style="font-size:11px;color:var(--text2);">热量</div>'
+    +     '<div style="font-size:18px;font-weight:800;color:var(--red);">' + Math.round(r.cal||0) + '</div>'
+    +     '<div style="font-size:10px;color:var(--text2);">/' + g.cal + '</div>'
+    +   '</div>'
+    +   '<div style="flex:1;min-width:80px;text-align:center;padding:8px;background:var(--surface2);border-radius:12px;">'
+    +     '<div style="font-size:11px;color:var(--text2);">饮水</div>'
+    +     '<div style="font-size:18px;font-weight:800;color:var(--blue);">' + Math.round(r.water||0) + '</div>'
+    +     '<div style="font-size:10px;color:var(--text2);">/' + g.water + 'ml</div>'
+    +   '</div>'
+    +   '<div style="flex:1;min-width:80px;text-align:center;padding:8px;background:var(--surface2);border-radius:12px;">'
+    +     '<div style="font-size:11px;color:var(--text2);">运动</div>'
+    +     '<div style="font-size:18px;font-weight:800;color:var(--green);">' + Math.round(r.exercise||0) + '</div>'
+    +     '<div style="font-size:10px;color:var(--text2);">/' + g.ex + 'min</div>'
+    +   '</div>'
+    + '</div>';
+  if (r.foods && r.foods.length > 0) {
+    h += '<div style="margin-top:10px;font-size:12px;color:var(--text2);">饮食：' + r.foods.map(function(f){ return f.name; }).join('、') + '</div>';
+  }
+  h += '</div>';
+  box.innerHTML = h;
 }
 
 function drawLineChart(canvasId, values, color) {
